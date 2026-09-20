@@ -1,0 +1,18 @@
+{
+  "name": "v01d-cyber",
+  "type": "module",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "astro dev",
+    "build": "node scripts/fetch-art.mjs && astro build",
+    "preview": "astro preview",
+    "test": "vitest run",
+    "fetch-art": "node scripts/fetch-art.mjs"
+  },
+  "dependencies": {
+    "@fontsource/jetbrains-mono": "^5.3.0",
+    "astro": "^7.3.3",
+    "vitest": "^4.1.11"
+  }
+}
