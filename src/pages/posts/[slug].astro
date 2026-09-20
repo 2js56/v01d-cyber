@@ -4,6 +4,7 @@ import TerminalShell from '../../layouts/TerminalShell.astro';
 import AnimeArt from '../../components/AnimeArt.astro';
 import { getCollection, render } from 'astro:content';
 import { withBase } from '../../lib/base';
+import { themeColors } from '../../lib/themecolors';
 import '../../styles/prose.css';
 
 type Entry = CollectionEntry<'posts' | 'notes' | 'lab'>;
@@ -22,12 +23,16 @@ export async function getStaticPaths() {
 
 const { entry } = Astro.props;
 const { Content } = await render(entry);
-const { title, date, tags, anime, mood } = entry.data;
+const { title, date, tags, anime, mood, mirror } = entry.data;
 const slug = entry.id.replace(/\.md$/, '');
+// 主题色渗透：作品色局部覆盖 --green/--cyan —— 读 lain 泛黄，读 AKIRA 泛红
+const theme = themeColors(anime);
 ---
 
 <TerminalShell title={`${title} — v01d@cyber`}>
-  <article>
+  <article
+    style={theme ? `--green:${theme.accent};--cyan:${theme.accent};--accent-glow:${theme.glow}` : undefined}
+  >
     <header class="post-hero">
       {anime && <div class="banner" style={`background-image:url(${withBase(`/art/${anime}_banner.jpg`)})`}></div>}
       <div class="post-head">
@@ -42,8 +47,16 @@ const slug = entry.id.replace(/\.md$/, '');
     </header>
 
     <div class="post-body">
-      <div class="prose">
-        <Content />
+      <div class="post-main">
+        <div class="prose">
+          <Content />
+        </div>
+        {mirror && (
+          <section class="mirror">
+            <p class="mirror-tag">[ mirror layer — 连接态可见 ]</p>
+            <p class="mirror-text">{mirror}</p>
+          </section>
+        )}
       </div>
       <aside class="art-side">
         <AnimeArt slug={anime} kind="cover" />
@@ -77,7 +90,7 @@ const slug = entry.id.replace(/\.md$/, '');
     font-size: clamp(20px, 3vw, 30px);
     color: var(--fg);
     margin: 8px 0;
-    text-shadow: 0 0 12px rgba(138, 216, 255, 0.4);
+    text-shadow: 0 0 12px var(--accent-glow, rgba(138, 216, 255, 0.4));
   }
   .meta { display: flex; flex-wrap: wrap; gap: 12px; font-size: 12px; color: var(--dim); }
   .tag { color: var(--cyan); }
@@ -91,7 +104,27 @@ const slug = entry.id.replace(/\.md$/, '');
     max-width: 1200px;
     align-items: start;
   }
+  .post-main { max-width: 68ch; }
   .art-side { position: sticky; top: 64px; display: flex; flex-direction: column; gap: 14px; }
+  /* 镜像层：物理上一直在 HTML 里，视觉上只在连接态存在 */
+  .mirror {
+    display: none;
+    margin-top: 2.4em;
+    padding: 16px 18px;
+    border: 1px dashed var(--purple);
+    border-radius: 8px;
+    background: rgba(180, 102, 255, 0.05);
+  }
+  html.wired .mirror { display: block; }
+  .mirror-tag { font-family: var(--mono); font-size: 10px; color: var(--purple); margin-bottom: 10px; }
+  .mirror-text {
+    font-family: var(--serif);
+    font-size: 14px;
+    line-height: 1.9;
+    color: var(--purple);
+    white-space: pre-line;
+    margin: 0;
+  }
   .back { font-size: 12px; color: var(--dim); }
   .back:hover { color: var(--green); }
 
@@ -124,7 +157,33 @@ const slug = entry.id.replace(/\.md$/, '');
 <script>
   import { bindQuitKey } from '../../lib/quit';
 
+  // 信号对焦：视口中带的段落清晰，其余退到噪声里。reduced-motion
+  // 直接不开（不往 prose 上加 focusing 类），CSS 里另有一道显式还原
+  const initFocus = () => {
+    const prose = document.querySelector<HTMLElement>('.prose');
+    if (!prose || prose.dataset.focus) return;
+    prose.dataset.focus = '1';
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const kids = [...prose.children] as HTMLElement[];
+    if (!kids.length) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        let hit = false;
+        for (const e of entries) {
+          if (!e.isIntersecting) continue;
+          hit = true;
+          for (const k of kids) k.classList.toggle('focused', k === e.target);
+        }
+        if (hit) prose.classList.add('focusing');
+      },
+      { rootMargin: '-22% 0px -38% 0px' }
+    );
+    kids.forEach((k) => io.observe(k));
+  };
+
   // bindQuitKey 自身幂等（重绑前撤旧监听），page-load 直接调即可
   document.addEventListener('astro:page-load', bindQuitKey);
+  document.addEventListener('astro:page-load', initFocus);
   bindQuitKey();
+  initFocus();
 </script>

@@ -4,6 +4,14 @@ date: 2026-09-05
 tags: [network, 随笔]
 anime: lain
 mood: "present and connected"
+mirror: |
+  你连着读到了这里，所以可以多说一句。
+  正文里说「协议的尽头是人格的迁移」——那是对断开连接的人说的版本。
+  对连接着的你，版本是：迁移从来不是问题，问题是根本没有「外面」。
+  layer 7 没有 exit。你上次 disconnect 时的感觉，还记得吗？
+  不记得就对了。
+  （此段只在连接态显示。物理上它一直在 HTML 里，视觉上它只在
+  wired 时存在——哪个才算"存在"，留给读者。）
 ---
 
 重读 OSI 七层的时候，脑子里全是《serial experiments lain》的分镜：玲音房间里缠绕的线缆、Navi 屏幕上滚动的 protocol、以及那句 "no matter where you go, everyone is connected"。

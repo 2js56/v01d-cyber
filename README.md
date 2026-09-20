@@ -39,7 +39,21 @@ draft: false
 
 ## 终端命令
 
-`help` `ls` `cat <n>` `cd <page>` `grep <关键词>`（全站搜索，含正文）`whoami` `theme`（开关 CRT 扫描线）`clear` `lain` `exit` —— 以及"本机已装"的 `ps` `netstat`/`ss` `uptime` `history` `nmap` `sqlmap` `ssh` `hydra`（对静态站使用后果自负）。另有若干彩蛋（试试 `sudo`、`rm -rf /`、konami code ↑↑↓↓←→←→BA）。
+`help` `ls` `cat <n>` `cd <page>` `grep <关键词>`（全站搜索，含正文）`whoami`（按访问代数演化）`who`（站主 + 你的本地指纹）`connect`/`disconnect`（连接态，全站换 lain 黄红面板、BGM 退远、hero 锁 lain）`theme`（开关 CRT 扫描线）`clear` `lain` `exit` —— 以及"本机已装"的 `ps` `netstat`/`ss` `uptime` `dmesg` `history` `nmap` `sqlmap` `ssh` `hydra`（对静态站使用后果自负）。
+
+文件系统是真的（至少长得是）：`cat /etc/passwd`、`cd /var/log`、`cat site.log`（站点史混排 1998 与 2026）、`cat /etc/shadow`（试试）。根下有个隐藏目录，`ls -a` 才现身。
+
+另有若干彩蛋（试试 `sudo`、`rm -rf /`、konami code ↑↑↓↓←→←→BA、深夜来访、footer 右下角那个 T-n）。
+
+## 站点的"活着"的部分（全部零后端，全在你本地）
+
+- **访客记忆**：localStorage 计会话代数——hero 副标题实时报时/报代号，`whoami` 答案随代数漂移
+- **深夜低语**：0:00–4:59 全站变冷变轻，hero 只换 lain / paranoia / perfect_blue，副标题换成 "why are you awake"
+- **无解释倒计时**：footer 只显示 T-n，不说明在数什么。点击让终端说一句没头没尾的话。T-0 当天颜色不对，hero 锁定对应作品
+- **主题色渗透**：文章的 `anime` 决定该页 accent——读 lain 泛黄、读 AKIRA 泛红（`src/lib/themecolors.ts`，manifest 全 slug 有色，测试保证）
+- **信号对焦**：阅读时只有当前段清晰，其余退成微糊的背景信号（prefers-reduced-motion 自动关闭）
+- **镜像文章**：frontmatter 加 `mirror: |` 多行文本——默认不显示，连接态（`connect` 后）才浮现，见 `wired-protocol.md`
+- **grep 信号残留**：无匹配时约 1/3 的词会渗出一句不属于任何文章的话（确定性哈希，同词同结果）
 
 ## 视觉素材版权
 

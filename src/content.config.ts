@@ -7,6 +7,8 @@ const entry = z.object({
   tags: z.array(z.string()).default([]),
   anime: z.string().optional(),
   mood: z.string().optional(),
+  /** 镜像层：只在连接态（html.wired）渲染显示的补充文本 */
+  mirror: z.string().optional(),
   draft: z.boolean().default(false),
 });
 
