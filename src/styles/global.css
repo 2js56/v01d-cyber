@@ -67,8 +67,31 @@ footer {
   80% { clip-path: inset(44% 0 40% 0); }
 }
 
-/* wired 模式：lain 彩蛋，全站色调反转 */
-html.wired { filter: hue-rotate(240deg) saturate(1.4); }
+/* 连接态（the WIRED）：全站换 lain 黄红面板 —— 变量级换肤而非 filter 调色 */
+html.wired {
+  --bg: #0a0502;
+  --bg2: #0d0703;
+  --fg: #ffe9c4;
+  --green: #ffd24a;
+  --cyan: #ffab54;
+  --purple: #ff6a3a;
+  --pink: #ffd7a0;
+  --dim: #9a7440;
+  filter: saturate(1.12);
+}
+/* 连接态扫描线更浓，暗角带暖 */
+html.wired .crt {
+  background:
+    radial-gradient(ellipse at center, transparent 50%, rgba(20, 0, 0, 0.5) 100%),
+    repeating-linear-gradient(0deg, transparent 0 2px, rgba(60, 30, 0, 0.07) 2px 3px);
+}
+/* 连接态专属：一道黄扫描亮线周期性滚过全屏 */
+html.wired .crt::after {
+  content: '';
+  position: absolute; left: 0; right: 0; height: 80px; top: -80px;
+  background: linear-gradient(180deg, transparent, rgba(255, 210, 74, 0.055), transparent);
+  animation: scanline 6s linear infinite;
+}
 
 /* rm -rf 彩蛋：全屏假故障 */
 body.rmrf::after {

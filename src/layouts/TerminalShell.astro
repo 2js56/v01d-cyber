@@ -22,9 +22,10 @@ const { title = 'v01d@cyber', boot = false } = Astro.props;
     {/* 客户端路由：导航不卸载 JS —— BGM 的 Audio 常驻，切页播放不断 */}
     <ClientRouter prefetch />
     <script is:inline>
-      // CRT 开关记忆（theme 命令写入）
+      // 本地偏好冷加载重放（跑在首屏渲染前，防闪）：CRT 开关 + 连接态
       try {
         if (localStorage.getItem('crt') === 'off') document.documentElement.dataset.crt = 'off';
+        if (localStorage.getItem('net') === 'wired') document.documentElement.classList.add('wired');
       } catch {}
     </script>
   </head>
@@ -46,7 +47,9 @@ const { title = 'v01d@cyber', boot = false } = Astro.props;
     <script>
       // 窗口栏：时钟 + BGM 指示器。虚拟导航换掉整个 body，每次 page-load
       // 对新元素重绑；冷加载时脚本先于 astro:page-load 执行，直接调一次（marker 防双绑）
-      import { bgmToggle, bgmResume, syncBgmIndicator } from '../lib/bgm';
+      import { bgmToggle, bgmResume, syncBgmIndicator, bgmSetDucked } from '../lib/bgm';
+      import { applyNet } from '../lib/net';
+      import { webStores } from '../lib/visitor';
 
       let clockTimer: ReturnType<typeof setInterval> | undefined;
       const syncShell = () => {
@@ -54,6 +57,8 @@ const { title = 'v01d@cyber', boot = false } = Astro.props;
         try {
           if (localStorage.getItem('crt') === 'off') document.documentElement.dataset.crt = 'off';
         } catch {}
+        // 连接态同样重放（冷加载已由 head 内联脚本处理，这里管虚拟导航）
+        bgmSetDucked(applyNet(document.documentElement, webStores().ls));
         const clock = document.getElementById('hud-clock');
         if (clock) {
           clearInterval(clockTimer);

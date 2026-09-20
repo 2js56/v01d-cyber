@@ -58,9 +58,20 @@ const ctx: Ctx = {
 <script>
   import { execCommand, makeState } from '../lib/commands';
   import { tabComplete } from '../lib/complete';
-  import { bgmToggle } from '../lib/bgm';
+  import { bgmToggle, bgmSetDucked } from '../lib/bgm';
   import { withBase } from '../lib/base';
   import { navigate } from 'astro:transitions/client';
+  import { netSet, applyNet, netOn } from '../lib/net';
+  import { visit, readFinger, webStores } from '../lib/visitor';
+
+  // 连接态总闸：写偏好 → 重放 <html> → BGM 退远/恢复 → 广播（hero 即时换台）
+  const netGo = (on: boolean) => {
+    const { ls } = webStores();
+    netSet(ls, on);
+    applyNet(document.documentElement, ls);
+    bgmSetDucked(on);
+    dispatchEvent(new CustomEvent('net:change', { detail: on }));
+  };
 
   // 终端初始化：虚拟导航回首页时 DOM 是新的，需重绑。本脚本整个生命周期
   // 只执行一次（ClientRouter 去重），靠 astro:page-load 反复 init；
@@ -76,6 +87,13 @@ const ctx: Ctx = {
     const promptEl = document.getElementById('cli-prompt')!;
     const ctx = JSON.parse(root.dataset.ctx!);
     const state = makeState();
+    // 访客记忆注入：whoami 按会话代数演化；who 的指纹当场采样
+    state.whoamiN = visit(webStores().ls, webStores().ss, Date.now()).n;
+    ctx.finger = readFinger(
+      navigator,
+      { screen, devicePixelRatio },
+      Intl.DateTimeFormat().resolvedOptions().timeZone
+    );
 
     // 提示符跟随 cwd：v01d@cyber:~$ ↔ v01d@cyber:~/posts$
     const updPrompt = () =>
@@ -180,7 +198,9 @@ const ctx: Ctx = {
         el.dataset.crt = off ? 'on' : 'off';
         try { localStorage.setItem('crt', off ? 'on' : 'off'); } catch {}
       }
-      if (result.effect === 'wired') document.documentElement.classList.toggle('wired');
+      if (result.effect === 'wired') netGo(!netOn(webStores().ls));
+      if (result.effect === 'net-on') netGo(true);
+      if (result.effect === 'net-off') netGo(false);
       if (result.effect === 'rmrf') {
         document.body.classList.add('rmrf');
         setTimeout(() => document.body.classList.remove('rmrf'), 1500);
@@ -251,7 +271,7 @@ const ctx: Ctx = {
         ki = e.key === KONAMI[ki] ? ki + 1 : e.key === KONAMI[0] ? 1 : 0;
         if (ki === KONAMI.length) {
           ki = 0;
-          document.documentElement.classList.toggle('wired');
+          netGo(!netOn(webStores().ls));
           typeLine('↑↑↓↓←→←→BA — welcome to the WIRED.', 'purple');
         }
       },

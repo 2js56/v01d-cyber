@@ -1,4 +1,6 @@
 import { manPage } from './manpages';
+import { residueFor } from './residue';
+import { whoamiLine } from './visitor';
 
 export interface Entry {
   slug: string;
@@ -22,6 +24,8 @@ export interface Ctx {
   notes: Entry[];
   lab: Entry[];
   search?: SearchEntry[];
+  /** who 的本地指纹行（客户端 init 时采样注入；测试/SSR 缺省） */
+  finger?: string[];
 }
 
 export interface Line {
@@ -29,7 +33,15 @@ export interface Line {
   cls?: '' | 'cyan' | 'green' | 'err' | 'dim' | 'purple';
 }
 
-export type Effect = 'clear' | 'wired' | 'rmrf' | 'exit' | 'crt-toggle' | 'bgm-toggle';
+export type Effect =
+  | 'clear'
+  | 'wired'
+  | 'rmrf'
+  | 'exit'
+  | 'crt-toggle'
+  | 'bgm-toggle'
+  | 'net-on'
+  | 'net-off';
 
 export interface Result {
   lines: Line[];
@@ -43,9 +55,11 @@ export interface State {
   history: string[];
   /** 当前目录：'' = ~（home），或 'posts' | 'notes' | 'lab' */
   cwd: string;
+  /** 访客会话代数（客户端注入；whoami 按它演化） */
+  whoamiN: number;
 }
 
-export const makeState = (): State => ({ history: [], cwd: '' });
+export const makeState = (): State => ({ history: [], cwd: '', whoamiN: 0 });
 
 /** 管道中 cat 输出正文纯文本（来自搜索索引），无索引时退化为标题行 */
 function bodyOf(slug: string, ctx: Ctx): string[] {
@@ -69,6 +83,12 @@ function resolvePath(cwd: string, input: string): string {
 
 // serial experiments lain 首播日（1998-07-06，JST）—— uptime 从这天起算
 const LAIN_EPOCH = Date.parse('1998-07-06T00:00:00+09:00');
+
+/** grep 无匹配时：某些词会渗出一句不属于任何文章的话（确定性哈希，约 1/3 触发） */
+function residueLine(query: string): Line[] {
+  const res = residueFor(query);
+  return res ? [{ text: `signal residue: ${res}`, cls: 'purple' }] : [];
+}
 
 /** 对外入口：处理管道（a | b | c），每段 stdout 喂给下一段 stdin */
 export function execCommand(raw: string, state: State, ctx: Ctx): Result {
@@ -111,7 +131,7 @@ function runCase(cmd: string, args: string[], state: State, ctx: Ctx, stdin?: st
       return {
         lines: [
           {
-            text: 'commands: help man ls cat cd grep mpg123 whoami theme clear lain exit',
+            text: 'commands: help man ls cat cd grep mpg123 whoami who theme clear lain connect exit',
             cls: 'green',
           },
           { text: '用法: man <cmd> 看手册 · cat <n|文件> · cd <目录> · ↑↓ 历史 · Ctrl+R 搜索', cls: 'dim' },
@@ -239,7 +259,12 @@ function runCase(cmd: string, args: string[], state: State, ctx: Ctx, stdin?: st
       if (stdin) {
         const hits = stdin.filter((l) => terms.every((t) => l.toLowerCase().includes(t)));
         if (!hits.length)
-          return { lines: [{ text: `grep: 无匹配（${args.join(' ')}）`, cls: 'err' }] };
+          return {
+            lines: [
+              { text: `grep: 无匹配（${args.join(' ')}）`, cls: 'err' },
+              ...residueLine(args.join(' ')),
+            ],
+          };
         return { lines: hits.map((h) => ({ text: h, cls: 'cyan' as const })) };
       }
       if (!ctx.search)
@@ -253,7 +278,12 @@ function runCase(cmd: string, args: string[], state: State, ctx: Ctx, stdin?: st
         return terms.every((t) => hay.includes(t));
       });
       if (!hits.length)
-        return { lines: [{ text: `grep: 无匹配（${args.join(' ')}）`, cls: 'err' }] };
+        return {
+          lines: [
+            { text: `grep: 无匹配（${args.join(' ')}）`, cls: 'err' },
+            ...residueLine(args.join(' ')),
+          ],
+        };
       const lines: Line[] = [
         { text: `grep "${args.join(' ')}": ${hits.length} hit${hits.length > 1 ? 's' : ''}`, cls: 'dim' },
       ];
@@ -284,11 +314,40 @@ function runCase(cmd: string, args: string[], state: State, ctx: Ctx, stdin?: st
       return { lines: [], navigate: { href: path ? `/#${path}` : '/' } };
     }
 
-    case 'whoami':
+    case 'whoami': {
+      // 身份按访问代数演化：guest → guest? → you are not v01d（站主身份见 who）
+      const l = whoamiLine(state.whoamiN);
+      return { lines: [{ text: l.text, cls: l.cls as Line['cls'] }] };
+    }
+
+    case 'who':
       return {
         lines: [
-          { text: 'v01d — web 渗透 / 内网安全 / shellcode 免杀 / 赛璐璐考古学家', cls: 'green' },
+          { text: 'v01d     tty1    自称站主，web 渗透 / 内网 / 免杀      ~/ghost', cls: 'green' },
+          { text: 'guest    pts/0    就是你，此刻                        此刻', cls: '' },
+          ...(ctx.finger
+            ? ctx.finger.map((t) => ({ text: t, cls: '' as const }))
+            : [{ text: 'who: 本地指纹采样不可用（没有 nav 就没有你）', cls: 'dim' as const }]),
         ],
+      };
+
+    case 'connect':
+      return {
+        lines: [
+          { text: 'dialing the WIRED …', cls: 'dim' },
+          { text: 'connection established. 无论你到哪里，所有人都已连接。', cls: 'purple' },
+          { text: 'disconnect 可断开（但你确定要吗）', cls: 'dim' },
+        ],
+        effect: 'net-on',
+      };
+
+    case 'disconnect':
+      return {
+        lines: [
+          { text: 'connection closed by foreign host.', cls: 'dim' },
+          { text: '线拔了。有些东西留下来了。', cls: 'purple' },
+        ],
+        effect: 'net-off',
       };
 
     case 'clear':

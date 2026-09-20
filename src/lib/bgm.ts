@@ -4,8 +4,11 @@ import { withBase } from './base';
 // 进站自动起播（默认开，mpg123/♪ 可关并记住）；站内走客户端路由，播放不断
 // 音频文件缺失时命令优雅报错
 const VOL = 0.35;
+// 连接态（the WIRED）音量：Duvet 退到远处
+const DUCK = 0.16;
 
 let audio: HTMLAudioElement | null = null;
+let ducked = false;
 
 const ensure = () => {
   if (!audio) {
@@ -30,6 +33,13 @@ const ensure = () => {
 };
 
 export const bgmPlaying = () => !!audio && !audio.paused && !audio.error;
+
+/** 连接态：音乐退远/恢复；未在播时只记状态（起播时生效） */
+export function bgmSetDucked(on: boolean) {
+  if (ducked === on) return;
+  ducked = on;
+  if (audio && bgmPlaying()) fade(audio, on ? DUCK : VOL, 900);
+}
 
 /** 自动起播偏好：默认开（首次访客也尝试），显式关过才关 */
 export function autostartWanted(pref: string | null): boolean {
@@ -72,7 +82,7 @@ async function toggleInner(): Promise<'on' | 'off' | 'missing'> {
   try {
     a.volume = 0;
     await a.play();
-    await fade(a, VOL, 1200);
+    await fade(a, ducked ? DUCK : VOL, 1200);
     try {
       localStorage.setItem('bgm', 'on');
     } catch {}

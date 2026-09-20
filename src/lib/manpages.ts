@@ -64,18 +64,42 @@ EXAMPLES
   whoami: `NAME
        whoami — display effective username
 DESCRIPTION
-       v01d — web 渗透 / 内网安全 / shellcode 免杀 / 赛璐璐考古学家。
-       你敲的是 whoami，但答案永远是站长。想看自己的？浏览器
-       开发者工具里那个才是你。`,
+       答案取决于你是第几次来。会变的。
+       站主身份见 who(1)。`,
+  who: `NAME
+       who — show who is logged on
+DESCRIPTION
+       两行登录者：自称站主的 v01d，和此刻的你。
+       顺带当场采样你的本地指纹 —— agent / 语言 / 时区 / 屏幕。
+       全部只显示在你的屏幕上：本站是纯静态，没有后端，无处上传。
+SEE ALSO
+       whoami(1) —— 一个会随时间改变答案的问题`,
+  connect: `NAME
+       connect — connect to the WIRED
+SYNOPSIS
+       connect
+DESCRIPTION
+       建立连接。连接期间站点换一副面孔，首屏锁在 lain，
+       音乐退到远处，正文以另一种方式浮现。
+       连接会被记住 —— 下次来的时候，你已经在里面了。
+SEE ALSO
+       disconnect(1), lain(1)`,
+  disconnect: `NAME
+       disconnect — close the connection
+SYNOPSIS
+       disconnect
+DESCRIPTION
+       拔线。所有状态回落。
+       有些东西据说会留下来，但日志里没写。`,
   lain: `NAME
        lain — present day, present time
 SYNOPSIS
        lain
 DESCRIPTION
        no matter where you go, everyone is connected.
-       触发 wired 模式。再敲一次解除。konami code 同理。
+       切换连接态（connect / disconnect 的开关版）。konami code 同理。
 SEE ALSO
-       你路由器的 DHCP 列表`,
+       connect(1), 你路由器的 DHCP 列表`,
   sudo: `NAME
        sudo — execute a command as another user
 DESCRIPTION

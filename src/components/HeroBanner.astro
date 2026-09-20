@@ -84,6 +84,8 @@ const pool = slugs
 
 <script>
   import { withBase } from '../lib/base';
+  import { netOn } from '../lib/net';
+  import { webStores } from '../lib/visitor';
 
   // 虚拟导航回首页时 hero 是新元素，page-load 重绑；旧 hero 的定时器/监听一并撤掉
   let heroAC: AbortController | null = null;
@@ -103,27 +105,58 @@ const pool = slugs
       .map((s) => s.split('|') as [string, string]);
     let idx = pool.findIndex(([s]) => s === hero.dataset.current);
 
+    const swapTo = (next: number) => {
+      const [slug, title] = pool[next];
+      const img = new Image();
+      img.onload = () => {
+        hero.style.backgroundImage = `url(${withBase(`/art/${slug}_banner.jpg`)})`;
+        const credit = hero.querySelector('.hero-credit');
+        if (credit) credit.textContent = title;
+      };
+      img.src = withBase(`/art/${slug}_banner.jpg`);
+    };
+    const glitchSwap = (next: number) => {
+      hero.classList.add('glitching');
+      setTimeout(() => swapTo(next), 300);
+      setTimeout(() => hero.classList.remove('glitching'), 650);
+    };
+
+    // 连接态：首屏锁 lain 直到断开
+    const lainIdx = pool.findIndex(([s]) => s === 'lain');
+
     // 定时 glitch 换图
     const timer = setInterval(() => {
       if (!hero.isConnected) {
         clearInterval(timer);
         return;
       }
+      if (netOn(webStores().ls)) {
+        if (lainIdx >= 0 && idx !== lainIdx) {
+          idx = lainIdx;
+          glitchSwap(idx);
+        }
+        return;
+      }
       hero.classList.add('glitching');
       setTimeout(() => {
         idx = (idx + 1) % pool.length;
-        const [slug, title] = pool[idx];
-        const img = new Image();
-        img.onload = () => {
-          hero.style.backgroundImage = `url(${withBase(`/art/${slug}_banner.jpg`)})`;
-          const credit = hero.querySelector('.hero-credit');
-          if (credit) credit.textContent = title;
-        };
-        img.src = withBase(`/art/${slug}_banner.jpg`);
+        swapTo(idx);
       }, 300);
       setTimeout(() => hero.classList.remove('glitching'), 650);
     }, 9000);
     signal.addEventListener('abort', () => clearInterval(timer));
+
+    // connect/disconnect 即时换台，不等下一个 9s tick
+    addEventListener(
+      'net:change',
+      () => {
+        if (netOn(webStores().ls) && lainIdx >= 0 && idx !== lainIdx) {
+          idx = lainIdx;
+          glitchSwap(idx);
+        }
+      },
+      { signal }
+    );
 
     // 数据雨：低密度低透明度，滚出视口即停
     const canvas = hero.querySelector('canvas')!;

@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { execCommand, makeState, type Ctx } from '../src/lib/commands';
+import { residueFor } from '../src/lib/residue';
 
 // date 是 ISO 字符串：ctx 经 data-ctx JSON 传到客户端，Date 会变 string
 // （Entry.date 曾声明为 Date 导致 ls 在浏览器抛 TypeError —— 空回显）
@@ -171,8 +172,8 @@ describe('execCommand', () => {
     expect(execCommand('theme', makeState(), entries).effect).toBe('crt-toggle');
   });
 
-  it('whoami 介绍自己', () => {
-    expect(execCommand('whoami', makeState(), entries).lines[0]?.text).toMatch(/v01d/);
+  it('whoami 介绍访客自己（站主身份移到了 who）', () => {
+    expect(execCommand('whoami', makeState(), entries).lines[0]?.text).toMatch(/guest/);
   });
 
   it('help 列出命令（含 grep 和假工具/假系统命令）', () => {
@@ -409,3 +410,72 @@ describe('注入彩蛋已移除', () => {
     );
   });
 });
+
+describe('连接态命令', () => {
+  it('connect 建立 WIRED 连接（net-on）', () => {
+    const r = execCommand('connect', makeState(), entries);
+    expect(r.effect).toBe('net-on');
+    expect(r.lines.map((l) => l.text).join('\n')).toMatch(/WIRED|连接/);
+  });
+
+  it('disconnect 断开（net-off）', () => {
+    const r = execCommand('disconnect', makeState(), entries);
+    expect(r.effect).toBe('net-off');
+  });
+
+  it('lain 命令仍可用（toggle 语义，wired effect）', () => {
+    const r = execCommand('lain', makeState(), entries);
+    expect(r.effect).toBe('wired');
+  });
+});
+
+describe('whoami 身份演化（按访问代数）', () => {
+  it('默认（代数 0）是 guest', () => {
+    expect(execCommand('whoami', makeState(), entries).lines[0]?.text).toContain('guest');
+  });
+
+  it('代数 10 进入身份消解', () => {
+    const s = makeState();
+    s.whoamiN = 10;
+    const t = execCommand('whoami', s, entries).lines[0]?.text ?? '';
+    expect(t).toContain('v01d');
+    expect(t).not.toContain('guest');
+  });
+});
+
+describe('who 本地指纹', () => {
+  it('ctx.finger 存在时逐行输出', () => {
+    const r = execCommand('who', makeState(), { ...entries, finger: ['agent: X', 'lang: zh'] });
+    const text = r.lines.map((l) => l.text).join('\n');
+    expect(text).toContain('agent: X');
+    expect(text).toContain('lang: zh');
+  });
+
+  it('无 finger 时优雅降级', () => {
+    const text = execCommand('who', makeState(), entries).lines.map((l) => l.text).join('\n');
+    expect(text.length).toBeGreaterThan(0);
+  });
+});
+
+describe('grep 信号残留', () => {
+  // 从词表里现找一对触发/不触发的词（residueFor 是确定性哈希，样本足够）
+  const words = Array.from({ length: 60 }, (_, i) => `zz${i}q`);
+  const hit = words.find((w) => residueFor(w))!;
+  const miss = words.find((w) => !residueFor(w))!;
+
+  it('触发词在无匹配后渗出 signal residue', () => {
+    const text = execCommand(`grep ${hit}`, makeState(), searchCtx)
+      .lines.map((l) => l.text)
+      .join('\n');
+    expect(text).toContain('signal residue');
+  });
+
+  it('不触发的词保持正常报错', () => {
+    const text = execCommand(`grep ${miss}`, makeState(), searchCtx)
+      .lines.map((l) => l.text)
+      .join('\n');
+    expect(text).toContain('无匹配');
+    expect(text).not.toContain('signal residue');
+  });
+});
+
