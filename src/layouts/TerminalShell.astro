@@ -53,9 +53,11 @@ const { title = 'v01d@cyber', boot = false } = Astro.props;
       // body，每次 page-load 对新元素重绑；冷加载时脚本先于 astro:page-load
       // 执行，直接调一次（marker 防双绑）
       import { bgmToggle, bgmResume, syncBgmIndicator, bgmSetDucked } from '../lib/bgm';
-      import { applyNet } from '../lib/net';
+      import { applyNet, netOn } from '../lib/net';
       import { webStores, isNight } from '../lib/visitor';
       import { nextEvent, hudLabel } from '../lib/countdown';
+      import { ghostSighting, ghostEpoch } from '../lib/ghost';
+      import { siteMutation } from '../lib/mutation';
 
       let clockTimer: ReturnType<typeof setInterval> | undefined;
       let nightOn = isNight(new Date());
@@ -113,10 +115,47 @@ const { title = 'v01d@cyber', boot = false } = Astro.props;
           ind.addEventListener('click', () => bgmToggle());
         }
         syncBgmIndicator();
+        // 纪念日窗口栏变形：v01d@cyber — zsh → v01d@nerv — zsh
+        const title = document.querySelector<HTMLElement>('.wintitle');
+        if (title) {
+          const mut = siteMutation(new Date());
+          title.textContent = `${mut ? `v01d@${mut.user}` : 'v01d@cyber'} — zsh`;
+        }
       };
       document.addEventListener('astro:page-load', syncShell);
       syncShell();
       bgmResume();
+
+      // ===== 幽灵访客 =====
+      // 20 秒巡逻一次：确定性 epoch 调度（10 分钟一格，深夜/wired 更频繁），
+      // 本 epoch 演过就沉默。光标缓缓划过，或在终端留半句话然后走掉
+      const playGhostCursor = () => {
+        const el = document.createElement('div');
+        el.className = 'ghost-cursor';
+        const fromLeft = Math.random() < 0.5;
+        el.style.top = `${18 + Math.random() * 60}vh`;
+        el.style.left = fromLeft ? '-2vw' : '102vw';
+        document.body.appendChild(el);
+        requestAnimationFrame(() => {
+          el.style.transform = `translateX(${fromLeft ? 104 : -104}vw)`;
+          el.style.opacity = '0';
+        });
+        setTimeout(() => el.remove(), 5400);
+      };
+      const ghostPatrol = () => {
+        const g = ghostSighting(new Date(), netOn(webStores().ls));
+        if (!g) return;
+        try {
+          const epoch = String(ghostEpoch(new Date()));
+          if (sessionStorage.getItem('ghost-seen') === epoch) return;
+          sessionStorage.setItem('ghost-seen', epoch);
+          sessionStorage.setItem('ghost-recent', String(Date.now()));
+        } catch {}
+        if (g.kind === 'cursor' || !document.getElementById('cli')) playGhostCursor();
+        else if (g.line) dispatchEvent(new CustomEvent('term:print', { detail: g.line }));
+      };
+      setInterval(ghostPatrol, 20000);
+      setTimeout(ghostPatrol, 12000); // 冷启动：进站 12s 后第一次巡逻
     </script>
   </body>
 </html>

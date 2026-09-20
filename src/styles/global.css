@@ -138,6 +138,17 @@ body.poweron::after {
   100% { opacity: 0; }
 }
 
+/* 幽灵访客：一个不属于任何人的光标缓缓划过（4.6s 横穿 + 尾段淡出） */
+.ghost-cursor {
+  position: fixed; z-index: 9998;
+  width: 9px; height: 9px; border-radius: 50%;
+  background: #cfe8ff;
+  box-shadow: 0 0 12px 3px rgba(138, 216, 255, 0.65);
+  opacity: 0.8;
+  transition: transform 4.6s linear, opacity 1.4s ease 3.4s;
+  pointer-events: none;
+}
+
 /* rm -rf 彩蛋：全屏假故障 */
 body.rmrf::after {
   content: '';

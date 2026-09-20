@@ -3,7 +3,7 @@ import type { Ctx } from './commands';
 const COMMANDS = [
   'help', 'man', 'ls', 'cat', 'cd', 'grep', 'mpg123', 'whoami', 'who', 'theme', 'clear', 'lain',
   'connect', 'disconnect', 'exit', 'keysound', 'poweroff',
-  'sudo', 'rm', 'history', 'uptime', 'ps', 'netstat', 'ss', 'nmap', 'sqlmap', 'ssh', 'hydra',
+  'sudo', 'rm', 'history', 'uptime', 'ps', 'netstat', 'ss', 'nmap', 'sqlmap', 'ssh', 'hydra', 'traceroute',
 ];
 
 export interface Completion {

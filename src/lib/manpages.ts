@@ -159,6 +159,16 @@ DESCRIPTION
        启动日志。与 cat /var/log/dmesg 同源。
        注意 clock 那行：这台机器认为 1998 与 2026 可以双启动。
        它没有错。`,
+  traceroute: `NAME
+       traceroute — print the route packets take to network host
+SYNOPSIS
+       traceroute [lain]
+DESCRIPTION
+       逐跳追踪到 lain 的路由。中间节点以 LAYER-NN 命名，
+       与站点其余部分共享同一套世界观。
+       最后一跳永远超时 —— 这不是故障。
+SEE ALSO
+       lain(1), netstat(1)`,
   nmap: `NAME
        nmap — Network Mapper
 DESCRIPTION

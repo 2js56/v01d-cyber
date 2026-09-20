@@ -2,6 +2,7 @@ import { manPage } from './manpages';
 import { residueFor } from './residue';
 import { whoamiLine } from './visitor';
 import { SYSFILES, SYSDIRS } from './sysfiles';
+import { siteMutation } from './mutation';
 
 export interface Entry {
   slug: string;
@@ -27,6 +28,8 @@ export interface Ctx {
   search?: SearchEntry[];
   /** who 的本地指纹行（客户端 init 时采样注入；测试/SSR 缺省） */
   finger?: string[];
+  /** 幽灵访客 5 分钟内出没过（客户端注入；who 多一行"刚才那位"） */
+  ghostHint?: boolean;
 }
 
 export interface Line {
@@ -140,7 +143,7 @@ function runCase(cmd: string, args: string[], state: State, ctx: Ctx, stdin?: st
           { text: '用法: man <cmd> 看手册 · cat <n|文件> · cd <目录> · ↑↓ 历史 · Ctrl+R 搜索', cls: 'dim' },
           { text: '环境: keysound（打字机音效）· poweroff（CRT 开关机）', cls: 'dim' },
           { text: '管道: ls | grep 免杀 —— 用 | 把命令串起来', cls: 'dim' },
-          { text: 'installed: ps netstat ss uptime dmesg history nmap sqlmap ssh hydra', cls: 'cyan' },
+          { text: 'installed: ps netstat ss uptime dmesg traceroute history nmap sqlmap ssh hydra', cls: 'cyan' },
           { text: '彩蛋自己找。（提示：上上下下左右左右BA）', cls: 'dim' },
         ],
       };
@@ -264,11 +267,26 @@ function runCase(cmd: string, args: string[], state: State, ctx: Ctx, stdin?: st
       }
       // 系统文件（/etc/passwd、~/.ghost/.bash_history 等）：输出全文，管道吃 stdout
       const sp = resolvePath(state.cwd, arg);
-      if (SYSFILES[sp])
+      if (SYSFILES[sp]) {
+        // 纪念日变形：motd 整个换内容，site.log 尾部多一行
+        const mut = siteMutation(new Date());
+        if (mut && sp === 'etc/motd')
+          return {
+            lines: mut.motd.map((t) => ({ text: t, cls: 'purple' as const })),
+            stdout: mut.motd,
+          };
+        if (mut && sp === 'var/log/site.log') {
+          const withLog = [...SYSFILES[sp]!, mut.logLine];
+          return {
+            lines: withLog.map((t) => ({ text: t, cls: 'dim' as const })),
+            stdout: withLog,
+          };
+        }
         return {
           lines: SYSFILES[sp].map((t) => ({ text: t, cls: 'dim' as const })),
           stdout: SYSFILES[sp],
         };
+      }
       if (sp === 'etc/shadow')
         return {
           lines: [
@@ -387,6 +405,9 @@ function runCase(cmd: string, args: string[], state: State, ctx: Ctx, stdin?: st
         lines: [
           { text: 'v01d     tty1    自称站主，web 渗透 / 内网 / 免杀      ~/ghost', cls: 'green' },
           { text: 'guest    pts/0    就是你，此刻                        此刻', cls: '' },
+          ...(ctx.ghostHint
+            ? [{ text: '???      pts/1    刚才那位。你没看见，不代表人家没来过。', cls: 'purple' as const }]
+            : []),
           ...(ctx.finger
             ? ctx.finger.map((t) => ({ text: t, cls: '' as const }))
             : [{ text: 'who: 本地指纹采样不可用（没有 nav 就没有你）', cls: 'dim' as const }]),
@@ -498,7 +519,9 @@ function runCase(cmd: string, args: string[], state: State, ctx: Ctx, stdin?: st
       };
     }
 
-    case 'ps':
+    case 'ps': {
+      // 纪念日当天进程表多一行不该在的东西
+      const mut = siteMutation(new Date());
       return {
         lines: [
           { text: '  PID TTY           TIME CMD', cls: 'dim' },
@@ -506,9 +529,32 @@ function runCase(cmd: string, args: string[], state: State, ctx: Ctx, stdin?: st
           { text: '    7 ?         00:00:00 wired.socket', cls: '' },
           { text: '   42 ?         24:97:33 crt-daemon --scanlines', cls: '' },
           { text: '  313 ?         00:13:37 art-pipeline --fetch-anilist', cls: '' },
+          ...(mut ? [{ text: mut.psLine, cls: 'purple' as const }] : []),
           { text: '  774 pts/0     00:00:00 ghost-in-shell', cls: '' },
         ],
       };
+    }
+
+    case 'traceroute': {
+      const target = args[0] ?? 'lain';
+      if (target !== 'lain')
+        return {
+          lines: [{ text: `traceroute: ${target}: Name or service not known —— 这个网络只有一个目的地`, cls: 'err' }],
+        };
+      return {
+        lines: [
+          { text: 'traceroute to lain (layer7.the-wired), 7 hops max, 60 byte packets', cls: 'dim' },
+          { text: ' 1  v01d.cyber (127.0.0.1)         0.4 ms   0.3 ms   0.4 ms', cls: '' },
+          { text: ' 2  router.cyber (192.168.1.1)     1.2 ms   1.1 ms   1.3 ms', cls: '' },
+          { text: ' 3  LAYER-01.WEIRD (10.1.0.1)     12.7 ms  12.5 ms  12.9 ms', cls: '' },
+          { text: ' 4  LAYER-03.PSYCHE (10.3.0.1)    19.2 ms  19.0 ms  19.4 ms', cls: '' },
+          { text: ' 5  LAYER-05.DISTORTION (10.5.0.1) 23.8 ms  23.6 ms  24.1 ms', cls: '' },
+          { text: ' 6  LAYER-07.SOCIETY (10.7.0.1)   31.0 ms  30.8 ms  31.2 ms', cls: '' },
+          { text: ' 7  layer7.the-wired (*)           * * *', cls: 'err' },
+          { text: 'lain 不是一个目的地。lain 是网络本身。', cls: 'purple' },
+        ],
+      };
+    }
 
     case 'netstat':
     case 'ss':

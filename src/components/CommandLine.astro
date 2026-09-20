@@ -94,13 +94,18 @@ const ctx: Ctx = {
     const promptEl = document.getElementById('cli-prompt')!;
     const ctx = JSON.parse(root.dataset.ctx!);
     const state = makeState();
-    // 访客记忆注入：whoami 按会话代数演化；who 的指纹当场采样
+    // 访客记忆注入：whoami 按会话代数演化；who 的指纹当场采样；
+    // 幽灵访客 5 分钟内来过 → who 多一行"刚才那位"
     state.whoamiN = visit(webStores().ls, webStores().ss, Date.now()).n;
     ctx.finger = readFinger(
       navigator,
       { screen, devicePixelRatio },
       Intl.DateTimeFormat().resolvedOptions().timeZone
     );
+    try {
+      const recent = Number(sessionStorage.getItem('ghost-recent'));
+      ctx.ghostHint = !!recent && Date.now() - recent < 300000;
+    } catch {}
 
     // 外部台词通道：footer 倒计时点击 → term:print → 打字机输出
     printAC?.abort();

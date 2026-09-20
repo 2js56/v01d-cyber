@@ -479,3 +479,25 @@ describe('grep 信号残留', () => {
   });
 });
 
+
+describe('幽灵访客与 traceroute', () => {
+  it('who 在幽灵来过时多一行"刚才那位"', () => {
+    const plain = execCommand('who', makeState(), entries).lines.map((l) => l.text).join('\n');
+    expect(plain).not.toContain('???');
+    const haunted = execCommand('who', makeState(), { ...entries, ghostHint: true }).lines.map((l) => l.text).join('\n');
+    expect(haunted).toContain('???');
+    expect(haunted).toContain('刚才那位');
+  });
+
+  it('traceroute lain：7 跳 + 最后一跳超时 + 结语', () => {
+    const lines = execCommand('traceroute lain', makeState(), entries).lines.map((l) => l.text);
+    expect(lines[0]).toContain('traceroute to lain');
+    expect(lines.filter((t) => /^\s*7\s/.test(t)).join()).toContain('* * *');
+    expect(lines.at(-1)).toContain('lain 是网络本身');
+  });
+
+  it('traceroute 别的目标：无法解析', () => {
+    const r = execCommand('traceroute google.com', makeState(), entries);
+    expect(r.lines[0]?.cls).toBe('err');
+  });
+});

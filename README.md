@@ -39,7 +39,7 @@ draft: false
 
 ## 终端命令
 
-`help` `ls` `cat <n>` `cd <page>` `grep <关键词>`（全站搜索，含正文）`whoami`（按访问代数演化）`who`（站主 + 你的本地指纹）`connect`/`disconnect`（连接态，全站换 lain 黄红面板、BGM 退远、hero 锁 lain）`theme`（开关 CRT 扫描线）`clear` `lain` `exit` —— 以及"本机已装"的 `ps` `netstat`/`ss` `uptime` `dmesg` `history` `nmap` `sqlmap` `ssh` `hydra`（对静态站使用后果自负）。
+`help` `ls` `cat <n>` `cd <page>` `grep <关键词>`（全站搜索，含正文）`whoami`（按访问代数演化）`who`（站主 + 你的本地指纹）`connect`/`disconnect`（连接态，全站换 lain 黄红面板、BGM 退远、hero 锁 lain）`theme`（开关 CRT 扫描线）`clear` `lain` `exit` —— 以及"本机已装"的 `ps` `netstat`/`ss` `uptime` `dmesg` `history` `nmap` `sqlmap` `ssh` `hydra` `traceroute`（只有一个目的地）`keysound`（打字机键音开关）`poweroff`（CRT 开关机；对静态站使用其余命令后果自负）。
 
 文件系统是真的（至少长得是）：`cat /etc/passwd`、`cd /var/log`、`cat site.log`（站点史混排 1998 与 2026）、`cat /etc/shadow`（试试）。根下有个隐藏目录，`ls -a` 才现身。
 
@@ -54,6 +54,19 @@ draft: false
 - **镜像文章**：frontmatter 加 `mirror: |` 多行文本——默认不显示，连接态（`connect` 后）才浮现，见 `wired-protocol.md`
 - **grep 信号残留**：无匹配时约 1/3 的词会渗出一句不属于任何文章的话（确定性哈希，同词同结果）
 
+## 动效与演出（prefers-reduced-motion 下全部自动退场）
+
+- **解码动画**：hero 副标题与文章标题以乱码流逐位落定（半角片假名 + 符号，`src/lib/scramble.ts`）
+- **换页闪切染色**：View Transition 换台的一瞬闪对应作品的 accent 色——读 lain 换台是黄的，读 AKIRA 是红的
+- **传输进度条**：读文章 = 下载文件，顶部进度条随滚动走 `↓ posts/xx.md 87%`，读完 `transfer complete ✓`
+- **打字机键音**：`keysound` 开关。Web Audio 现场合成机械 click（15ms 白噪声过 1.8kHz 高通），无音频文件无网络请求
+- **数据雨感知**：hero 的雨听得见终端——打字时雨加速下坠，`grep` 时满屏雨滴短暂变成你找的关键词，30 秒没人动就慢下来
+- **idle 低语**：60 秒没人动终端，它会自言自语一句（深夜更想说话；3 分钟冷却，一动就闭嘴）
+- **CRT 开关机**：`poweroff`——屏幕竖直压成一条亮线、缩成白点、熄灭，数秒后重启。BGM 一并断电（断电没有例外）
+- **幽灵访客**：偶尔有个不属于任何人的光标划过屏幕，或终端冒出半句话然后走掉。确定性调度（10 分钟一格的 epoch 哈希，深夜/连接态更频繁），同一 epoch 不重复；5 分钟内来过的话 `who` 会多一行
+- **traceroute lain**：7 跳 LAYER-NN 路由（WEIRD → PSYCHE → DISTORTION → SOCIETY…），最后一跳永远 `* * *`——lain 不是一个目的地，lain 是网络本身
+- **站点自我修改**：纪念日当天整站悄悄变形——窗口栏变 `v01d@nerv`、`cat /etc/motd` 换使徒通牒、`ps` 里多一个 angel 进程、site.log 追加 PATTERN BLUE。哪天变形，自己那天看
+
 ## 视觉素材版权
 
 `public/art/` 下的 key visual 来自 AniList 收录的官方宣传图，版权归各制作委员会所有。本站为个人非商用博客，页脚已标注来源；如需完全规避风险，可将 `scripts/fetch-art.mjs` 的图源替换为 AI 生成。
@@ -64,7 +77,7 @@ bôa — Duvet（serial experiments lain OP），低音量循环。**默认进�
 
 音频文件 `public/audio/duvet.mp3` 需自备且默认不入库（`.gitignore` 忽略 `*.mp3`，公开分发版权音频有被 DMCA 的风险）。想上线原曲：删掉 `.gitignore` 里那行、放入文件、commit——风险自担。文件缺失时命令会优雅报错。
 
-
+## 部署
 
 任意静态托管均可：
 
