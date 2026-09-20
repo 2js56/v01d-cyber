@@ -47,7 +47,7 @@ draft: false
 
 ## BGM
 
-终端里输 `mpg123` 播放 bôa — Duvet（serial experiments lain OP），低音量循环，再输一次停止；偏好会记住，下次进站在首次交互后续播。窗口栏右侧的 `♪` 也可以点。
+bôa — Duvet（serial experiments lain OP），低音量循环。**默认进站自动播放**：浏览器 autoplay 策略允许时（Chrome 对常访站点放行）进站即响，被拦时任意一次点击/按键立即响。站内导航走客户端路由（Astro View Transitions），切页音乐不断。终端里输 `mpg123` 或点窗口栏的 `♪` 可开关，偏好会记住（关过就不再自动播）。
 
 音频文件 `public/audio/duvet.mp3` 需自备且默认不入库（`.gitignore` 忽略 `*.mp3`，公开分发版权音频有被 DMCA 的风险）。想上线原曲：删掉 `.gitignore` 里那行、放入文件、commit——风险自担。文件缺失时命令会优雅报错。
 

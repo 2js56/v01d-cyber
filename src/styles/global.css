@@ -99,3 +99,15 @@ body.rmrf::after {
   #cli { display: none; }
 }
 @keyframes bgm-pulse { 0%, 100% { text-shadow: 0 0 4px var(--green); } 50% { text-shadow: 0 0 14px var(--green); } }
+
+/* 虚拟导航（View Transitions）：CRT 换台感 —— 旧页过曝收束，新页闪两下亮起。
+   prefers-reduced-motion 时上面的通配规则会把动画压成瞬时切换 */
+::view-transition-old(root) { animation: vt-out 0.16s ease-in both; }
+::view-transition-new(root) { animation: vt-in 0.24s ease-out both; }
+@keyframes vt-out { to { opacity: 0; filter: brightness(2.2) blur(2px); } }
+@keyframes vt-in {
+  0% { opacity: 0; filter: brightness(2); }
+  40% { opacity: 1; filter: brightness(1.3); }
+  70% { filter: brightness(0.95); }
+  100% { opacity: 1; filter: brightness(1); }
+}

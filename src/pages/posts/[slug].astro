@@ -124,5 +124,7 @@ const slug = entry.id.replace(/\.md$/, '');
 <script>
   import { bindQuitKey } from '../../lib/quit';
 
+  // bindQuitKey 自身幂等（重绑前撤旧监听），page-load 直接调即可
+  document.addEventListener('astro:page-load', bindQuitKey);
   bindQuitKey();
 </script>

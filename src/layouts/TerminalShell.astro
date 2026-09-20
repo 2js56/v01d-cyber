@@ -3,6 +3,7 @@ import '@fontsource/jetbrains-mono/400.css';
 import '@fontsource/jetbrains-mono/700.css';
 import '../styles/global.css';
 import { withBase } from '../lib/base';
+import { ClientRouter } from 'astro:transitions';
 
 interface Props {
   title?: string;
@@ -18,6 +19,8 @@ const { title = 'v01d@cyber', boot = false } = Astro.props;
     <meta name="generator" content={Astro.generator} />
     <link rel="icon" type="image/svg+xml" href={withBase('/favicon.svg')} />
     <title>{title}</title>
+    {/* 客户端路由：导航不卸载 JS —— BGM 的 Audio 常驻，切页播放不断 */}
+    <ClientRouter prefetch />
     <script is:inline>
       // CRT 开关记忆（theme 命令写入）
       try {
@@ -30,7 +33,7 @@ const { title = 'v01d@cyber', boot = false } = Astro.props;
     <header class="winbar">
       <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
       <span class="wintitle">v01d@cyber — zsh</span>
-      <button id="bgm-ind" class="bgm" title="mpg123 — bôa 「Duvet」">♪̸</button>
+      <button id="bgm-ind" class="bgm" title="mpg123 — bôa 「Duvet」">♪</button>
       <a class="homelink" href={withBase('/')}>~/ghost</a>
     </header>
     <main>
@@ -41,22 +44,32 @@ const { title = 'v01d@cyber', boot = false } = Astro.props;
       <span id="hud-clock" aria-hidden="true">--:--:--</span>
     </footer>
     <script>
-      // StatusHUD：每秒更新时钟
-      const clock = document.getElementById('hud-clock');
-      if (clock) {
-        const tick = () => (clock.textContent = new Date().toLocaleTimeString('zh-CN', { hour12: false }));
-        tick();
-        setInterval(tick, 1000);
-      }
-    </script>
-    <script>
-      // BGM：Duvet。指示器可点，上次开着的等首次交互后自动续播
+      // 窗口栏：时钟 + BGM 指示器。虚拟导航换掉整个 body，每次 page-load
+      // 对新元素重绑；冷加载时脚本先于 astro:page-load 执行，直接调一次（marker 防双绑）
       import { bgmToggle, bgmResume, syncBgmIndicator } from '../lib/bgm';
-      const ind = document.getElementById('bgm-ind');
-      if (ind) {
-        ind.addEventListener('click', () => bgmToggle());
+
+      let clockTimer: ReturnType<typeof setInterval> | undefined;
+      const syncShell = () => {
+        // 虚拟导航会把 <html> 属性同步成服务端版本，本地偏好重放
+        try {
+          if (localStorage.getItem('crt') === 'off') document.documentElement.dataset.crt = 'off';
+        } catch {}
+        const clock = document.getElementById('hud-clock');
+        if (clock) {
+          clearInterval(clockTimer);
+          const tick = () => (clock.textContent = new Date().toLocaleTimeString('zh-CN', { hour12: false }));
+          tick();
+          clockTimer = setInterval(tick, 1000);
+        }
+        const ind = document.getElementById('bgm-ind');
+        if (ind && !ind.dataset.bind) {
+          ind.dataset.bind = '1';
+          ind.addEventListener('click', () => bgmToggle());
+        }
         syncBgmIndicator();
-      }
+      };
+      document.addEventListener('astro:page-load', syncShell);
+      syncShell();
       bgmResume();
     </script>
   </body>

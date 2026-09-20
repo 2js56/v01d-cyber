@@ -75,6 +75,13 @@ import { withBase } from '../lib/base';
 <script>
   import { bindQuitKey } from '../lib/quit';
 
-  document.getElementById('req-path')!.textContent = location.pathname;
-  bindQuitKey();
+  const init = () => {
+    const el = document.getElementById('req-path');
+    if (!el || el.dataset.ready) return;
+    el.dataset.ready = '1';
+    el.textContent = location.pathname;
+    bindQuitKey();
+  };
+  document.addEventListener('astro:page-load', init);
+  init();
 </script>

@@ -45,41 +45,48 @@
     '                            everyone is connected.',
   ];
 
-  const el = document.getElementById('boot')!;
-  const log = document.getElementById('boot-log')!;
+  const init = () => {
+    const el = document.getElementById('boot');
+    const log = document.getElementById('boot-log');
+    if (!el || !log || el.dataset.ready) return;
+    el.dataset.ready = '1';
 
-  let booted = false;
-  try { booted = localStorage.getItem('booted') === '1'; } catch {}
-  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let booted = false;
+    try { booted = localStorage.getItem('booted') === '1'; } catch {}
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  const finish = () => {
-    el.classList.add('done');
-    setTimeout(() => el.setAttribute('hidden', ''), 450);
-    try { localStorage.setItem('booted', '1'); } catch {}
-    removeEventListener('keydown', finish);
-    removeEventListener('pointerdown', finish);
+    const finish = () => {
+      el.classList.add('done');
+      setTimeout(() => el.setAttribute('hidden', ''), 450);
+      try { localStorage.setItem('booted', '1'); } catch {}
+      removeEventListener('keydown', finish);
+      removeEventListener('pointerdown', finish);
+    };
+
+    if (!booted && !reduce) {
+      el.removeAttribute('hidden');
+      addEventListener('keydown', finish, { once: true });
+      addEventListener('pointerdown', finish, { once: true });
+
+      let li = 0;
+      const typeLine = () => {
+        if (li >= LINES.length) {
+          setTimeout(finish, 500);
+          return;
+        }
+        const line = LINES[li++];
+        let ci = 0;
+        const step = () => {
+          log.textContent = log.textContent.slice(0, log.textContent.length) + line.slice(0, ++ci) + (ci < line.length ? '▊' : '\n');
+          if (ci < line.length) setTimeout(step, 8);
+          else setTimeout(typeLine, 60);
+        };
+        step();
+      };
+      setTimeout(typeLine, 150);
+    }
   };
 
-  if (!booted && !reduce) {
-    el.removeAttribute('hidden');
-    addEventListener('keydown', finish, { once: true });
-    addEventListener('pointerdown', finish, { once: true });
-
-    let li = 0;
-    const typeLine = () => {
-      if (li >= LINES.length) {
-        setTimeout(finish, 500);
-        return;
-      }
-      const line = LINES[li++];
-      let ci = 0;
-      const step = () => {
-        log.textContent = log.textContent.slice(0, log.textContent.length) + line.slice(0, ++ci) + (ci < line.length ? '▊' : '\n');
-        if (ci < line.length) setTimeout(step, 8);
-        else setTimeout(typeLine, 60);
-      };
-      step();
-    };
-    setTimeout(typeLine, 150);
-  }
+  document.addEventListener('astro:page-load', init);
+  init();
 </script>

@@ -1,7 +1,8 @@
 import { withBase } from './base';
 
 // BGM: bôa — Duvet（serial experiments lain OP）
-// 音频文件 public/audio/duvet.mp3 不入 git（版权），缺失时命令优雅报错
+// 进站自动起播（默认开，mpg123/♪ 可关并记住）；站内走客户端路由，播放不断
+// 音频文件缺失时命令优雅报错
 const VOL = 0.35;
 
 let audio: HTMLAudioElement | null = null;
@@ -29,6 +30,11 @@ const ensure = () => {
 };
 
 export const bgmPlaying = () => !!audio && !audio.paused && !audio.error;
+
+/** 自动起播偏好：默认开（首次访客也尝试），显式关过才关 */
+export function autostartWanted(pref: string | null): boolean {
+  return pref !== 'off';
+}
 
 /** 淡入淡出切换；返回切换后状态，文件缺失/被拦截返回 'missing' */
 let toggling = false;
@@ -78,21 +84,32 @@ async function toggleInner(): Promise<'on' | 'off' | 'missing'> {
   }
 }
 
-/** 上次是开着的：等用户首次交互后自动续播（浏览器禁止静默自动播放） */
+/** 进站自动起播：立即尝试播放（Chrome 对常访站点放行），同时挂好
+ *  首次交互即播的兜底——若先等尝试失败再挂，尝试 pending 期间用户的
+ *  第一次交互会白白错过。成功则撤兜底。 */
+let resumed = false;
 export function bgmResume() {
+  if (resumed) return;
+  resumed = true;
   let want = false;
   try {
-    want = localStorage.getItem('bgm') === 'on';
+    want = autostartWanted(localStorage.getItem('bgm'));
   } catch {}
   syncBgmIndicator();
   if (!want) return;
-  const kick = () => {
+  const unarm = () => {
     removeEventListener('pointerdown', kick);
     removeEventListener('keydown', kick);
+  };
+  const kick = () => {
+    unarm();
     bgmToggle();
   };
   addEventListener('pointerdown', kick);
   addEventListener('keydown', kick);
+  bgmToggle().then((st) => {
+    if (st === 'on') unarm();
+  });
 }
 
 /** 窗口栏指示器：♪ 常显，播放时亮绿呼吸，静默时暗淡 */
@@ -102,7 +119,7 @@ export function syncBgmIndicator() {
   let on = bgmPlaying();
   if (!audio) {
     try {
-      on = localStorage.getItem('bgm') === 'on';
+      on = autostartWanted(localStorage.getItem('bgm'));
     } catch {}
   }
   // 不用 ♪̸（组合斜线）——多数字体渲染模糊；统一 ♪，靠亮度/动画区分
