@@ -81,10 +81,16 @@ describe('execCommand', () => {
     expect(execCommand('whoami', makeState(), entries).lines[0]?.text).toMatch(/v01d/);
   });
 
-  it('help 列出命令（含 grep）', () => {
-    const text = execCommand('help', makeState(), entries).lines[0]?.text ?? '';
+  it('help 列出命令（含 grep 和假工具/假系统命令）', () => {
+    const text = execCommand('help', makeState(), entries).lines.map((l) => l.text).join('\n');
     expect(text).toContain('ls');
     expect(text).toContain('grep');
+    expect(text).toContain('nmap');
+    expect(text).toContain('sqlmap');
+    expect(text).toContain('ps');
+    expect(text).toContain('netstat');
+    expect(text).toContain('uptime');
+    expect(text).toContain('history');
   });
 
   it('rm 触发假删除', () => {

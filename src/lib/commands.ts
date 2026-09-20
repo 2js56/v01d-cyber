@@ -63,6 +63,7 @@ export function execCommand(raw: string, state: State, ctx: Ctx): Result {
             text: 'commands: help ls cat <n> cd <page> grep <kw> whoami theme clear lain exit',
             cls: 'green',
           },
+          { text: 'installed: ps netstat ss uptime history nmap sqlmap ssh hydra', cls: 'cyan' },
           { text: '彩蛋自己找。（提示：上上下下左右左右BA）', cls: 'dim' },
         ],
       };

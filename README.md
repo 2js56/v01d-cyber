@@ -39,7 +39,7 @@ draft: false
 
 ## 终端命令
 
-`help` `ls` `cat <n>` `cd <page>` `whoami` `theme`（开关 CRT 扫描线）`clear` `lain` `exit` —— 以及若干彩蛋（试试 `sudo`、`rm -rf /`、konami code ↑↑↓↓←→←→BA）。
+`help` `ls` `cat <n>` `cd <page>` `grep <关键词>`（全站搜索，含正文）`whoami` `theme`（开关 CRT 扫描线）`clear` `lain` `exit` —— 以及"本机已装"的 `ps` `netstat`/`ss` `uptime` `history` `nmap` `sqlmap` `ssh` `hydra`（对静态站使用后果自负）。另有若干彩蛋（试试 `sudo`、`rm -rf /`、konami code ↑↑↓↓←→←→BA）。
 
 ## 视觉素材版权
 
