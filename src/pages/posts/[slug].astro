@@ -157,33 +157,7 @@ const theme = themeColors(anime);
 <script>
   import { bindQuitKey } from '../../lib/quit';
 
-  // 信号对焦：视口中带的段落清晰，其余退到噪声里。reduced-motion
-  // 直接不开（不往 prose 上加 focusing 类），CSS 里另有一道显式还原
-  const initFocus = () => {
-    const prose = document.querySelector<HTMLElement>('.prose');
-    if (!prose || prose.dataset.focus) return;
-    prose.dataset.focus = '1';
-    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    const kids = [...prose.children] as HTMLElement[];
-    if (!kids.length) return;
-    const io = new IntersectionObserver(
-      (entries) => {
-        let hit = false;
-        for (const e of entries) {
-          if (!e.isIntersecting) continue;
-          hit = true;
-          for (const k of kids) k.classList.toggle('focused', k === e.target);
-        }
-        if (hit) prose.classList.add('focusing');
-      },
-      { rootMargin: '-22% 0px -38% 0px' }
-    );
-    kids.forEach((k) => io.observe(k));
-  };
-
   // bindQuitKey 自身幂等（重绑前撤旧监听），page-load 直接调即可
   document.addEventListener('astro:page-load', bindQuitKey);
-  document.addEventListener('astro:page-load', initFocus);
   bindQuitKey();
-  initFocus();
 </script>

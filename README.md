@@ -51,7 +51,6 @@ draft: false
 - **深夜低语**：0:00–4:59 全站变冷变轻，hero 只换 lain / paranoia / perfect_blue，副标题换成 "why are you awake"
 - **无解释倒计时**：footer 只显示 T-n，不说明在数什么。点击让终端说一句没头没尾的话。T-0 当天颜色不对，hero 锁定对应作品
 - **主题色渗透**：文章的 `anime` 决定该页 accent——读 lain 泛黄、读 AKIRA 泛红（`src/lib/themecolors.ts`，manifest 全 slug 有色，测试保证）
-- **信号对焦**：阅读时只有当前段清晰，其余退成微糊的背景信号（prefers-reduced-motion 自动关闭）
 - **镜像文章**：frontmatter 加 `mirror: |` 多行文本——默认不显示，连接态（`connect` 后）才浮现，见 `wired-protocol.md`
 - **grep 信号残留**：无匹配时约 1/3 的词会渗出一句不属于任何文章的话（确定性哈希，同词同结果）
 
