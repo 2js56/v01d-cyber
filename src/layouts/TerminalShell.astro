@@ -1,0 +1,50 @@
+---
+import '@fontsource/jetbrains-mono/400.css';
+import '@fontsource/jetbrains-mono/700.css';
+import '../styles/global.css';
+
+interface Props {
+  title?: string;
+  boot?: boolean;
+}
+const { title = 'v01d@cyber', boot = false } = Astro.props;
+---
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{title}</title>
+    <script is:inline>
+      // CRT 开关记忆（theme 命令写入）
+      try {
+        if (localStorage.getItem('crt') === 'off') document.documentElement.dataset.crt = 'off';
+      } catch {}
+    </script>
+  </head>
+  <body>
+    <div class="crt" aria-hidden="true"></div>
+    <header class="winbar">
+      <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
+      <span class="wintitle">v01d@cyber — zsh</span>
+      <a class="homelink" href="/">~/garden</a>
+    </header>
+    <main>
+      <slot />
+    </main>
+    <footer>
+      <span>v01d@cyber · Astro 手写 · 视觉版权归原作者（lain / GITS / Bebop …）</span>
+      <span id="hud-clock" aria-hidden="true">--:--:--</span>
+    </footer>
+    <script>
+      // StatusHUD：每秒更新时钟
+      const clock = document.getElementById('hud-clock');
+      if (clock) {
+        const tick = () => (clock.textContent = new Date().toLocaleTimeString('zh-CN', { hour12: false }));
+        tick();
+        setInterval(tick, 1000);
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,97 @@
+:root {
+  --bg: #04080f;
+  --bg2: #05030c;
+  --fg: #cfe8ff;
+  --green: #7dffb0;
+  --cyan: #8ad8ff;
+  --purple: #b466ff;
+  --pink: #ff9ad5;
+  --dim: #3a7a5a;
+  --mono: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+  --serif: 'LXGW WenKai', 'Songti SC', 'Noto Serif CJK SC', serif;
+}
+* { box-sizing: border-box; margin: 0; }
+html { background: var(--bg); color: var(--fg); font-family: var(--mono); }
+body { min-height: 100vh; display: flex; flex-direction: column; }
+a { color: var(--cyan); text-decoration: none; }
+a:hover { text-decoration: underline; }
+main { flex: 1; }
+
+/* ===== 窗口栏 ===== */
+.winbar {
+  display: flex; align-items: center; gap: 12px;
+  padding: 8px 14px;
+  background: var(--bg2);
+  border-bottom: 1px solid #1a2030;
+  position: sticky; top: 0; z-index: 100;
+}
+.winbar .dots { display: flex; gap: 6px; }
+.winbar .dots i { width: 10px; height: 10px; border-radius: 50%; }
+.winbar .dots i:nth-child(1) { background: #ff5f57; }
+.winbar .dots i:nth-child(2) { background: #febc2e; }
+.winbar .dots i:nth-child(3) { background: #28c840; }
+.winbar .wintitle { font-size: 12px; color: var(--dim); letter-spacing: 1px; }
+.winbar .homelink { margin-left: auto; font-size: 12px; color: var(--dim); }
+.winbar .homelink:hover { color: var(--green); text-decoration: none; }
+
+/* ===== 页脚 ===== */
+footer {
+  display: flex; justify-content: space-between; align-items: center;
+  gap: 12px; flex-wrap: wrap;
+  padding: 10px 14px;
+  font-size: 10px; color: var(--dim);
+  border-top: 1px solid #1a2030;
+  background: var(--bg2);
+}
+
+/* ===== CRT 扫描线 + 暗角（全局覆盖层） ===== */
+.crt {
+  position: fixed; inset: 0; pointer-events: none; z-index: 9999;
+  background:
+    radial-gradient(ellipse at center, transparent 55%, rgba(0, 0, 0, 0.35) 100%),
+    repeating-linear-gradient(0deg, transparent 0 2px, rgba(0, 20, 10, 0.045) 2px 3px);
+}
+[data-crt='off'] .crt { display: none; }
+
+/* ===== 通用动效 ===== */
+@keyframes blink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
+@keyframes scanline { 0% { top: -30%; } 100% { top: 130%; } }
+@keyframes glitch-1 {
+  0%, 100% { clip-path: inset(0 0 82% 0); }
+  20% { clip-path: inset(28% 0 52% 0); }
+  40% { clip-path: inset(62% 0 8% 0); }
+  60% { clip-path: inset(10% 0 74% 0); }
+  80% { clip-path: inset(44% 0 40% 0); }
+}
+
+/* wired 模式：lain 彩蛋，全站色调反转 */
+html.wired { filter: hue-rotate(240deg) saturate(1.4); }
+
+/* rm -rf 彩蛋：全屏假故障 */
+body.rmrf::after {
+  content: '';
+  position: fixed; inset: 0; z-index: 99999; pointer-events: none;
+  background:
+    repeating-linear-gradient(0deg, rgba(255, 0, 80, 0.12) 0 2px, transparent 2px 5px),
+    rgba(20, 0, 10, 0.55);
+  animation: rmrf-shake 0.09s infinite;
+}
+@keyframes rmrf-shake {
+  0% { transform: translate(0, 0); }
+  25% { transform: translate(3px, -2px); }
+  50% { transform: translate(-2px, 3px); }
+  75% { transform: translate(2px, 2px); }
+  100% { transform: translate(-3px, -3px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+  .crt { display: none; }
+}
+
+@media (max-width: 768px) {
+  #cli { display: none; }
+}
