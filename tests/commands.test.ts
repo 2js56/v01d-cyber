@@ -300,6 +300,95 @@ describe('假系统命令', () => {
   });
 });
 
+describe('管道', () => {
+  it('ls | grep 过滤目录行', () => {
+    const text = execCommand('ls | grep posts', makeState(), entries).lines
+      .map((l) => l.text)
+      .join('\n');
+    expect(text).toContain('posts/');
+  });
+
+  it('ls -R | grep notes 行级过滤（标题行命中，文件行不含）', () => {
+    const lines = execCommand('ls -R | grep notes', makeState(), entries).lines.map((l) => l.text);
+    expect(lines).toContain('notes:');
+    expect(lines.some((l) => l.includes('n1.md'))).toBe(false);
+  });
+
+  it('ps aux | grep lain 过滤进程行', () => {
+    const text = execCommand('ps aux | grep lain.service', makeState(), entries).lines
+      .map((l) => l.text)
+      .join('\n');
+    expect(text).toContain('lain.service');
+    expect(text).not.toContain('crt-daemon');
+  });
+
+  it('help | grep 也能过滤', () => {
+    const lines = execCommand('help | grep 管道', makeState(), entries).lines.map((l) => l.text);
+    expect(lines).toHaveLength(1);
+    expect(lines[0]).toContain('管道');
+  });
+
+  it('cat | grep 在文章正文里过滤', () => {
+    const text = execCommand('cat posts/a | grep shellcode', makeState(), searchCtx).lines
+      .map((l) => l.text)
+      .join('\n');
+    expect(text).toContain('shellcode');
+  });
+
+  it('管道中间段报错透传', () => {
+    const text = execCommand('zzz | grep x', makeState(), entries).lines
+      .map((l) => l.text)
+      .join('\n');
+    expect(text).toMatch(/command not found: zzz/);
+  });
+
+  it('管道无匹配报错', () => {
+    const text = execCommand('ls | grep 不存在的词', makeState(), entries).lines
+      .map((l) => l.text)
+      .join('\n');
+    expect(text).toMatch(/无匹配/);
+  });
+
+  it('整条管道命令记入 history 一次', () => {
+    const s = makeState();
+    execCommand('ls | grep posts', s, entries);
+    expect(s.history.filter((h) => h === 'ls | grep posts')).toHaveLength(1);
+  });
+});
+
+describe('man 手册', () => {
+  it('man ls 输出手册页', () => {
+    const text = execCommand('man ls', makeState(), entries).lines.map((l) => l.text).join('\n');
+    expect(text).toMatch(/NAME/);
+    expect(text).toMatch(/SYNOPSIS/);
+    expect(text).toMatch(/ls/);
+  });
+
+  it('man man 递归彩蛋', () => {
+    const text = execCommand('man man', makeState(), entries).lines.map((l) => l.text).join('\n');
+    expect(text).toMatch(/man/);
+  });
+
+  it('man 无参数报真实文案', () => {
+    expect(execCommand('man', makeState(), entries).lines[0]?.text).toMatch(
+      /What manual page/
+    );
+  });
+
+  it('man 未知命令报 No manual entry', () => {
+    expect(execCommand('man zzz', makeState(), entries).lines[0]?.text).toMatch(
+      /No manual entry for zzz/
+    );
+  });
+
+  it('man ls | grep SEE ALSO 手册也能进管道', () => {
+    const text = execCommand('man ls | grep SEE', makeState(), entries).lines
+      .map((l) => l.text)
+      .join('\n');
+    expect(text).toContain('SEE ALSO');
+  });
+});
+
 describe('注入彩蛋已移除', () => {
   it(`' OR '1'='1 回归 command not found`, () => {
     expect(execCommand("' OR '1'='1", makeState(), entries).lines[0]?.text).toMatch(

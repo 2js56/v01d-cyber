@@ -99,7 +99,57 @@ const ctx: Ctx = {
       step();
     });
 
+  // readline：↑/↓ 遍历历史，Ctrl+R 反向搜索（每按一次跳到更早的一条匹配）
+  let histIdx = -1; // -1 = 不在历史遍历中
+  let draft = ''; // 遍历前的草稿，↓ 到底恢复
+  let rQuery = ''; // Ctrl+R 固定的搜索词
+  let rPos = -1; // 当前命中位置，下一次从这里往前找
+
+  input.addEventListener('keydown', (e) => {
+    if (e.isComposing) return;
+    const h = state.history;
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (!h.length) return;
+      if (histIdx === -1) {
+        draft = input.value;
+        histIdx = h.length;
+      }
+      histIdx = Math.max(0, histIdx - 1);
+      input.value = h[histIdx] ?? '';
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (histIdx === -1) return;
+      histIdx++;
+      if (histIdx >= h.length) {
+        histIdx = -1;
+        input.value = draft;
+      } else {
+        input.value = h[histIdx];
+      }
+    } else if (e.ctrlKey && (e.key === 'r' || e.key === 'R')) {
+      e.preventDefault(); // 拦住浏览器刷新
+      if (rQuery !== input.value) {
+        rQuery = input.value;
+        rPos = h.length;
+      }
+      for (let i = rPos - 1; i >= 0; i--) {
+        if (h[i].includes(rQuery)) {
+          rPos = i;
+          putLine(`(reverse-i-search)\`${rQuery}': ${h[i]}`, 'dim');
+          input.value = h[i];
+          return;
+        }
+      }
+      putLine(`(reverse-i-search)\`${rQuery}': 没有更早的匹配`, 'dim');
+    } else if (e.key !== 'Tab' && e.key !== 'Enter') {
+      rQuery = ''; // 输入变了，下次 Ctrl+R 重新取词
+    }
+  });
+
   async function run(raw: string) {
+    histIdx = -1;
+    draft = '';
     await typeLine(`v01d@cyber:~$ ${raw}`, 'prompt');
     const result = execCommand(raw, state, ctx);
     for (const line of result.lines) {

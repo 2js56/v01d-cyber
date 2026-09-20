@@ -14,7 +14,9 @@ const strip = (md: string) =>
     .replace(/^>\s?/gm, '') // 引用
     .replace(/[*_~]{1,3}/g, '') // 强调/删除线
     .replace(/^---$/gm, ' ')
-    .replace(/\s+/g, ' ')
+    // 只合并非换行空白：保留行结构，cat | grep 才有真实的“行”可过滤
+    .replace(/[^\S\n]+/g, ' ')
+    .replace(/\n{3,}/g, '\n\n')
     .trim();
 
 export async function GET() {

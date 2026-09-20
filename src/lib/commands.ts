@@ -1,3 +1,5 @@
+import { manPage } from './manpages';
+
 export interface Entry {
   slug: string;
   title: string;
@@ -33,6 +35,8 @@ export interface Result {
   lines: Line[];
   navigate?: { href: string };
   effect?: Effect;
+  /** 管道用：本命令的 stdout 行（默认等于 lines 的文本） */
+  stdout?: string[];
 }
 
 export interface State {
@@ -42,6 +46,12 @@ export interface State {
 }
 
 export const makeState = (): State => ({ history: [], cwd: '' });
+
+/** 管道中 cat 输出正文纯文本（来自搜索索引），无索引时退化为标题行 */
+function bodyOf(slug: string, ctx: Ctx): string[] {
+  const se = ctx.search?.find((s) => s.slug === slug);
+  return se && se.text ? se.text.split('\n') : [slug];
+}
 
 /** 路径规范化：容忍 ~ / 绝对路径 / 相对路径 / .. / . / 尾斜杠 */
 function resolvePath(cwd: string, input: string): string {
@@ -60,10 +70,34 @@ function resolvePath(cwd: string, input: string): string {
 // serial experiments lain 首播日（1998-07-06，JST）—— uptime 从这天起算
 const LAIN_EPOCH = Date.parse('1998-07-06T00:00:00+09:00');
 
+/** 对外入口：处理管道（a | b | c），每段 stdout 喂给下一段 stdin */
 export function execCommand(raw: string, state: State, ctx: Ctx): Result {
   const trimmed = raw.trim();
-  const [cmd, ...args] = trimmed.split(/\s+/);
   state.history.push(trimmed);
+
+  const segs = trimmed.split('|').map((s) => s.trim()).filter(Boolean);
+  if (segs.length <= 1) return execOne(trimmed, state, ctx);
+
+  let stdin: string[] | undefined;
+  let earlyErrs: Line[] = [];
+  let result: Result = { lines: [] };
+  for (let i = 0; i < segs.length; i++) {
+    result = execOne(segs[i], state, ctx, stdin);
+    if (i < segs.length - 1) earlyErrs = [...earlyErrs, ...result.lines.filter((l) => l.cls === 'err')];
+    stdin = result.stdout;
+  }
+  // 中间段的 stderr 照常显示（真 shell 行为），最终结果以末段为准
+  return { ...result, lines: [...earlyErrs, ...result.lines] };
+}
+
+function execOne(raw: string, state: State, ctx: Ctx, stdin?: string[]): Result {
+  const [cmd, ...args] = raw.trim().split(/\s+/);
+  const r = runCase(cmd, args, state, ctx, stdin);
+  r.stdout ??= r.lines.map((l) => l.text);
+  return r;
+}
+
+function runCase(cmd: string, args: string[], state: State, ctx: Ctx, stdin?: string[]): Result {
 
   const groups = [
     ['posts', ctx.posts],
@@ -77,13 +111,29 @@ export function execCommand(raw: string, state: State, ctx: Ctx): Result {
       return {
         lines: [
           {
-            text: 'commands: help ls cat <n> cd <page> grep <kw> whoami theme clear lain exit',
+            text: 'commands: help man ls cat cd grep whoami theme clear lain exit',
             cls: 'green',
           },
+          { text: '用法: man <cmd> 看手册 · cat <n|文件> · cd <目录> · ↑↓ 历史 · Ctrl+R 搜索', cls: 'dim' },
+          { text: '管道: ls | grep 免杀 —— 用 | 把命令串起来', cls: 'dim' },
           { text: 'installed: ps netstat ss uptime history nmap sqlmap ssh hydra', cls: 'cyan' },
           { text: '彩蛋自己找。（提示：上上下下左右左右BA）', cls: 'dim' },
         ],
       };
+
+    case 'man': {
+      const t = args[0];
+      if (!t) return { lines: [{ text: 'What manual page do you want?', cls: 'err' }] };
+      const page = manPage(t);
+      if (!page) return { lines: [{ text: `No manual entry for ${t}`, cls: 'err' }] };
+      return {
+        lines: page.split('\n').map((l) => ({
+          text: l,
+          // 全大写的节标题（NAME/SYNOPSIS…）绿色，正文 dim
+          cls: /^[A-Z][A-Z ]+$/.test(l.trim()) ? ('green' as const) : ('dim' as const),
+        })),
+      };
+    }
 
     case 'ls': {
       // Unix 语义：无参数只列子目录名；ls <dir> 进目录；-R 递归全列。
@@ -145,6 +195,7 @@ export function execCommand(raw: string, state: State, ctx: Ctx): Result {
         return {
           lines: [{ text: `opening ${e.slug}.md …`, cls: 'dim' }],
           navigate: { href: `/posts/${e.slug}` },
+          stdout: bodyOf(e.slug, ctx),
         };
       }
       // 文件名：相对 cwd 解析（可省略 .md）
@@ -157,6 +208,7 @@ export function execCommand(raw: string, state: State, ctx: Ctx): Result {
           return {
             lines: [{ text: `opening ${e.slug}.md …`, cls: 'dim' }],
             navigate: { href: `/posts/${e.slug}` },
+            stdout: bodyOf(e.slug, ctx),
           };
         return { lines: [{ text: `cat: ${arg}: No such file or directory`, cls: 'err' }] };
       }
@@ -182,13 +234,20 @@ export function execCommand(raw: string, state: State, ctx: Ctx): Result {
     case 'grep': {
       if (!args.length)
         return { lines: [{ text: 'usage: grep <关键词> …（搜标题 / tags / 正文）', cls: 'err' }] };
+      const terms = args.map((a) => a.toLowerCase());
+      // 管道模式：在上一命令的 stdout 里过滤（真 grep 语义）
+      if (stdin) {
+        const hits = stdin.filter((l) => terms.every((t) => l.toLowerCase().includes(t)));
+        if (!hits.length)
+          return { lines: [{ text: `grep: 无匹配（${args.join(' ')}）`, cls: 'err' }] };
+        return { lines: hits.map((h) => ({ text: h, cls: 'cyan' as const })) };
+      }
       if (!ctx.search)
         return {
           lines: [
             { text: 'grep: 索引未就绪 —— /search-index.json 还没到手（静态站也会堵车）', cls: 'err' },
           ],
         };
-      const terms = args.map((a) => a.toLowerCase());
       const hits = ctx.search.filter((e) => {
         const hay = `${e.title} ${e.tags.join(' ')} ${e.text}`.toLowerCase();
         return terms.every((t) => hay.includes(t));

@@ -1,7 +1,7 @@
 import type { Ctx } from './commands';
 
 const COMMANDS = [
-  'help', 'ls', 'cat', 'cd', 'grep', 'whoami', 'theme', 'clear', 'lain', 'exit',
+  'help', 'man', 'ls', 'cat', 'cd', 'grep', 'whoami', 'theme', 'clear', 'lain', 'exit',
   'sudo', 'rm', 'history', 'uptime', 'ps', 'netstat', 'ss', 'nmap', 'sqlmap', 'ssh', 'hydra',
 ];
 
