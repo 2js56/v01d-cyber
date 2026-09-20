@@ -52,7 +52,8 @@ const slug = entry.id.replace(/\.md$/, '');
     </div>
 
     <footer class="post-foot">
-      <span>-- EOF --</span>
+      <span class="eof">-- EOF --</span>
+      <a class="quit" href={withBase('/')}><kbd>q</kbd> / <kbd>Esc</kbd> — 返回 ~/garden</a>
     </footer>
   </article>
 </TerminalShell>
@@ -94,7 +95,24 @@ const slug = entry.id.replace(/\.md$/, '');
   .back { font-size: 12px; color: var(--dim); }
   .back:hover { color: var(--green); }
 
-  .post-foot { padding: 0 7% 40px; max-width: 1200px; color: var(--dim); font-size: 11px; }
+  .post-foot {
+    display: flex; align-items: baseline; gap: 18px;
+    padding: 0 7% 40px; max-width: 1200px;
+    color: var(--dim); font-size: 11px;
+  }
+  .quit {
+    margin-left: auto;
+    color: var(--dim);
+    border: 1px solid #1a2030;
+    border-radius: 4px;
+    padding: 4px 10px;
+    transition: color 0.15s, border-color 0.15s;
+  }
+  .quit:hover { color: var(--green); border-color: var(--green); text-decoration: none; }
+  .quit kbd {
+    font: inherit; color: var(--green);
+    margin-right: 4px;
+  }
 
   @media (max-width: 900px) {
     .post-body { grid-template-columns: 1fr; }
@@ -102,3 +120,16 @@ const slug = entry.id.replace(/\.md$/, '');
     .art-side :global(figure) { flex: 0 0 140px; }
   }
 </style>
+
+<script>
+  import { withBase } from '../../lib/base';
+
+  // pager 习惯：文章页按 q / Esc 回到 ~/garden（焦点在输入框时不劫持按键）
+  addEventListener('keydown', (e) => {
+    if (e.key !== 'q' && e.key !== 'Escape') return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const el = document.activeElement as HTMLElement | null;
+    if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable)) return;
+    location.href = withBase('/');
+  });
+</script>
