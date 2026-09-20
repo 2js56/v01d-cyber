@@ -16,8 +16,16 @@ const pool = slugs
   })
   .filter(Boolean)
   .join(',');
+// 深夜池：0:00–4:59 只换这三张（0:00 入夜 glitch 进池，5:00 天亮换回）
+const nightPool = ['lain', 'paranoia', 'perfect_blue']
+  .map((s) => {
+    const a = art(s);
+    return a ? `${s}|${a.title}` : null;
+  })
+  .filter(Boolean)
+  .join(',');
 ---
-<section class="hero" data-hero data-pool={pool} data-current={pick} style={`background-image:url(${banner})`}>
+<section class="hero" data-hero data-pool={pool} data-night-pool={nightPool} data-current={pick} style={`background-image:url(${banner})`}>
   <div class="hero-veil"></div>
   <div class="hero-text">
     <h1>v01d@cyber<span class="cursor">_</span></h1>
@@ -85,7 +93,8 @@ const pool = slugs
 <script>
   import { withBase } from '../lib/base';
   import { netOn } from '../lib/net';
-  import { webStores } from '../lib/visitor';
+  import { webStores, visit, greeting, isNight } from '../lib/visitor';
+  import { nextEvent } from '../lib/countdown';
 
   // 虚拟导航回首页时 hero 是新元素，page-load 重绑；旧 hero 的定时器/监听一并撤掉
   let heroAC: AbortController | null = null;
@@ -93,20 +102,44 @@ const pool = slugs
     const hero = document.querySelector<HTMLElement>('[data-hero]');
     if (!hero || hero.dataset.ready) return;
     hero.dataset.ready = '1';
-    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (reduce) return;
 
     heroAC?.abort();
     heroAC = new AbortController();
     const { signal } = heroAC;
 
-    const pool: Array<[string, string]> = (hero.dataset.pool ?? '')
-      .split(',')
-      .map((s) => s.split('|') as [string, string]);
-    let idx = pool.findIndex(([s]) => s === hero.dataset.current);
+    // Present Day 时间流：副标题活的（分钟级 + 连接/深夜变体）。
+    // 是内容不是动效，prefers-reduced-motion 也照常走
+    const sub = hero.querySelector<HTMLElement>('.hero-sub');
+    const paintSub = () => {
+      if (!sub) return;
+      const { ls, ss } = webStores();
+      sub.textContent = greeting(visit(ls, ss, Date.now()), new Date(), netOn(ls));
+    };
+    paintSub();
+    const subTimer = setInterval(() => {
+      if (!hero.isConnected) {
+        clearInterval(subTimer);
+        return;
+      }
+      paintSub();
+    }, 30000);
+    signal.addEventListener('abort', () => clearInterval(subTimer));
+    addEventListener('net:change', paintSub, { signal });
+    addEventListener('night:change', paintSub, { signal });
 
-    const swapTo = (next: number) => {
-      const [slug, title] = pool[next];
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduce) return;
+
+    const parse = (attr?: string): Array<[string, string]> =>
+      (attr ?? '')
+        .split(',')
+        .filter(Boolean)
+        .map((s) => s.split('|') as [string, string]);
+    const pool = parse(hero.dataset.pool);
+    const nightPool = parse(hero.dataset.nightPool);
+    let cur = hero.dataset.current ?? '';
+
+    const swapTo = (slug: string, title: string) => {
       const img = new Image();
       img.onload = () => {
         hero.style.backgroundImage = `url(${withBase(`/art/${slug}_banner.jpg`)})`;
@@ -115,14 +148,61 @@ const pool = slugs
       };
       img.src = withBase(`/art/${slug}_banner.jpg`);
     };
-    const glitchSwap = (next: number) => {
+    const glitchTo = (slug: string, title: string) => {
       hero.classList.add('glitching');
-      setTimeout(() => swapTo(next), 300);
+      setTimeout(() => swapTo(slug, title), 300);
       setTimeout(() => hero.classList.remove('glitching'), 650);
     };
 
-    // 连接态：首屏锁 lain 直到断开
-    const lainIdx = pool.findIndex(([s]) => s === 'lain');
+    // 锁定态优先级：wired（用户主动连接，最高）> 纪念日 T-0 > 深夜池 > 日间轮换
+    const lockOf = (): [string, string] | null => {
+      if (netOn(webStores().ls)) return pool.find(([s]) => s === 'lain') ?? null;
+      const doom = nextEvent(new Date());
+      if (doom && doom.days === 0) {
+        return (
+          pool.find(([s]) => s === doom.event.slug) ??
+          nightPool.find(([s]) => s === doom.event.slug) ??
+          null
+        );
+      }
+      return null;
+    };
+    const activePool = () => (isNight(new Date()) ? nightPool : pool);
+    const step = () => {
+      const lock = lockOf();
+      if (lock) {
+        if (lock[0] !== cur) {
+          cur = lock[0];
+          glitchTo(cur, lock[1]);
+        }
+        return;
+      }
+      const p = activePool();
+      if (!p.length) return;
+      const i = p.findIndex(([s]) => s === cur);
+      const [slug, title] = p[(i + 1) % p.length]!;
+      cur = slug;
+      glitchTo(slug, title);
+    };
+
+    // 首屏/入夜/天亮立刻归位：有锁（wired / T-0）立即锁，无锁且不在当前池就 glitch 进池
+    const enter = () => {
+      const lock = lockOf();
+      if (lock) {
+        if (lock[0] !== cur) {
+          cur = lock[0];
+          glitchTo(lock[0], lock[1]);
+        }
+        return;
+      }
+      const p = activePool();
+      if (p.some(([s]) => s === cur)) return;
+      const pick = p[Math.floor(Math.random() * p.length)];
+      if (pick) {
+        cur = pick[0];
+        glitchTo(pick[0], pick[1]);
+      }
+    };
 
     // 定时 glitch 换图
     const timer = setInterval(() => {
@@ -130,33 +210,14 @@ const pool = slugs
         clearInterval(timer);
         return;
       }
-      if (netOn(webStores().ls)) {
-        if (lainIdx >= 0 && idx !== lainIdx) {
-          idx = lainIdx;
-          glitchSwap(idx);
-        }
-        return;
-      }
-      hero.classList.add('glitching');
-      setTimeout(() => {
-        idx = (idx + 1) % pool.length;
-        swapTo(idx);
-      }, 300);
-      setTimeout(() => hero.classList.remove('glitching'), 650);
+      step();
     }, 9000);
     signal.addEventListener('abort', () => clearInterval(timer));
 
-    // connect/disconnect 即时换台，不等下一个 9s tick
-    addEventListener(
-      'net:change',
-      () => {
-        if (netOn(webStores().ls) && lainIdx >= 0 && idx !== lainIdx) {
-          idx = lainIdx;
-          glitchSwap(idx);
-        }
-      },
-      { signal }
-    );
+    // connect/disconnect、入夜/天亮：即时换台，不等下一个 tick
+    addEventListener('net:change', step, { signal });
+    addEventListener('night:change', enter, { signal });
+    enter();
 
     // 数据雨：低密度低透明度，滚出视口即停
     const canvas = hero.querySelector('canvas')!;

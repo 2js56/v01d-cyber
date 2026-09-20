@@ -77,6 +77,7 @@ const ctx: Ctx = {
   // 只执行一次（ClientRouter 去重），靠 astro:page-load 反复 init；
   // 冷加载时脚本先于 astro:page-load 执行，直接调一次（marker 防双绑）
   let konamiAC: AbortController | null = null;
+  let printAC: AbortController | null = null;
   const init = () => {
     const root = document.getElementById('cli');
     if (!root || root.dataset.ready) return;
@@ -93,6 +94,20 @@ const ctx: Ctx = {
       navigator,
       { screen, devicePixelRatio },
       Intl.DateTimeFormat().resolvedOptions().timeZone
+    );
+
+    // 外部台词通道：footer 倒计时点击 → term:print → 打字机输出
+    printAC?.abort();
+    printAC = new AbortController();
+    addEventListener(
+      'term:print',
+      (e) => {
+        const line = (e as CustomEvent<string>).detail;
+        if (!line) return;
+        input.focus();
+        typeLine(line, 'purple');
+      },
+      { signal: printAC.signal }
     );
 
     // 提示符跟随 cwd：v01d@cyber:~$ ↔ v01d@cyber:~/posts$

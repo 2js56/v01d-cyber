@@ -46,6 +46,20 @@ footer {
   border-top: 1px solid #1a2030;
   background: var(--bg2);
 }
+footer .hud-right { display: flex; gap: 14px; align-items: center; }
+#hud-count {
+  background: none; border: none; cursor: pointer;
+  font: inherit; color: var(--dim); padding: 0; letter-spacing: 1px;
+}
+#hud-count:hover { color: var(--green); }
+/* T-0 当天：HUD 变异 —— 没有解释，只有颜色不对 */
+#hud-count[data-doom] { color: #ff5f8f; animation: doom-blink 1.3s steps(2) infinite; }
+@keyframes doom-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+/* ===== 深夜低语（0:00–4:59）===== 站点困了：更冷、话更轻 */
+html[data-night] { --dim: #2f6488; }
+html[data-night] .hero-text h1 { text-shadow: 0 0 10px rgba(138, 216, 255, 0.4); }
+html[data-night] .hero-sub { color: var(--purple); opacity: 0.55; }
 
 /* ===== CRT 扫描线 + 暗角（全局覆盖层） ===== */
 .crt {

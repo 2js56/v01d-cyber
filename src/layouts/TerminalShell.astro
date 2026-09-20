@@ -22,11 +22,12 @@ const { title = 'v01d@cyber', boot = false } = Astro.props;
     {/* 客户端路由：导航不卸载 JS —— BGM 的 Audio 常驻，切页播放不断 */}
     <ClientRouter prefetch />
     <script is:inline>
-      // 本地偏好冷加载重放（跑在首屏渲染前，防闪）：CRT 开关 + 连接态
+      // 本地偏好冷加载重放（跑在首屏渲染前，防闪）：CRT 开关 + 连接态 + 深夜
       try {
         if (localStorage.getItem('crt') === 'off') document.documentElement.dataset.crt = 'off';
         if (localStorage.getItem('net') === 'wired') document.documentElement.classList.add('wired');
       } catch {}
+      if (new Date().getHours() < 5) document.documentElement.dataset.night = '1';
     </script>
   </head>
   <body>
@@ -42,16 +43,30 @@ const { title = 'v01d@cyber', boot = false } = Astro.props;
     </main>
     <footer>
       <span>v01d@cyber · Astro 手写 · 视觉版权归原作者（lain / GITS / Bebop …）</span>
-      <span id="hud-clock" aria-hidden="true">--:--:--</span>
+      <span class="hud-right">
+        <button id="hud-count"></button>
+        <span id="hud-clock" aria-hidden="true">--:--:--</span>
+      </span>
     </footer>
     <script>
-      // 窗口栏：时钟 + BGM 指示器。虚拟导航换掉整个 body，每次 page-load
-      // 对新元素重绑；冷加载时脚本先于 astro:page-load 执行，直接调一次（marker 防双绑）
+      // 窗口栏：时钟 + BGM 指示器 + 深夜检测 + 无解释倒计时。虚拟导航换掉整个
+      // body，每次 page-load 对新元素重绑；冷加载时脚本先于 astro:page-load
+      // 执行，直接调一次（marker 防双绑）
       import { bgmToggle, bgmResume, syncBgmIndicator, bgmSetDucked } from '../lib/bgm';
       import { applyNet } from '../lib/net';
-      import { webStores } from '../lib/visitor';
+      import { webStores, isNight } from '../lib/visitor';
+      import { nextEvent, hudLabel } from '../lib/countdown';
 
       let clockTimer: ReturnType<typeof setInterval> | undefined;
+      let nightOn = isNight(new Date());
+      // 深夜态重放 + 跨界检测：0:00 入夜、5:00 天亮，广播 night:change（hero 换池）
+      const syncNight = (announce: boolean) => {
+        const now = isNight(new Date());
+        if (now) document.documentElement.dataset.night = '1';
+        else delete document.documentElement.dataset.night;
+        if (announce && now !== nightOn) dispatchEvent(new CustomEvent('night:change', { detail: now }));
+        nightOn = now;
+      };
       const syncShell = () => {
         // 虚拟导航会把 <html> 属性同步成服务端版本，本地偏好重放
         try {
@@ -59,12 +74,35 @@ const { title = 'v01d@cyber', boot = false } = Astro.props;
         } catch {}
         // 连接态同样重放（冷加载已由 head 内联脚本处理，这里管虚拟导航）
         bgmSetDucked(applyNet(document.documentElement, webStores().ls));
+        syncNight(false);
         const clock = document.getElementById('hud-clock');
         if (clock) {
           clearInterval(clockTimer);
-          const tick = () => (clock.textContent = new Date().toLocaleTimeString('zh-CN', { hour12: false }));
+          const tick = () => {
+            clock.textContent = new Date().toLocaleTimeString('zh-CN', { hour12: false });
+            syncNight(true);
+          };
           tick();
           clockTimer = setInterval(tick, 1000);
+        }
+        // 无解释倒计时：只给 T-n。点击把那句话交给终端说
+        const count = document.getElementById('hud-count');
+        if (count && !count.dataset.bind) {
+          count.dataset.bind = '1';
+          const paint = () => {
+            const r = nextEvent(new Date());
+            if (!r) {
+              count.hidden = true;
+              return;
+            }
+            count.textContent = hudLabel(r.days);
+            if (r.days === 0) count.dataset.doom = '1';
+            count.dataset.line = r.event.line;
+          };
+          paint();
+          count.addEventListener('click', () => {
+            if (count.dataset.line) dispatchEvent(new CustomEvent('term:print', { detail: count.dataset.line }));
+          });
         }
         const ind = document.getElementById('bgm-ind');
         if (ind && !ind.dataset.bind) {
