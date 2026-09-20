@@ -60,6 +60,14 @@ describe('execCommand', () => {
     expect(text).toMatch(/No such file or directory/);
   });
 
+  it('cd posts 后 ls 直接列该目录文件', () => {
+    const s = makeState();
+    execCommand('cd posts', s, entries);
+    const text = execCommand('ls', s, entries).lines.map((l) => l.text).join('\n');
+    expect(text).toContain('a.md');
+    expect(text).not.toContain('posts/');
+  });
+
   it('cat 2 按列表序号打开第二篇', () => {
     const out = execCommand('cat 2', makeState(), entries);
     expect(out.navigate?.href).toBe('/posts/b');
@@ -72,11 +80,66 @@ describe('execCommand', () => {
 
   it('cat 越界报错', () => {
     const out = execCommand('cat 99', makeState(), entries);
-    expect(out.lines[0]?.text).toMatch(/No such entry/);
+    expect(out.lines[0]?.text).toMatch(/No such file or directory/);
+  });
+
+  it('cat 按文件名打开（带目录路径）', () => {
+    expect(execCommand('cat posts/a.md', makeState(), entries).navigate?.href).toBe('/posts/a');
+  });
+
+  it('cat 文件名可省略 .md 扩展名', () => {
+    expect(execCommand('cat posts/b', makeState(), entries).navigate?.href).toBe('/posts/b');
+  });
+
+  it('cd posts 后 cat 相对当前目录解析', () => {
+    const s = makeState();
+    execCommand('cd posts', s, entries);
+    expect(execCommand('cat a.md', s, entries).navigate?.href).toBe('/posts/a');
+  });
+
+  it('cat home 下裸文件名报错并提示正确路径', () => {
+    const out = execCommand('cat a.md', makeState(), entries);
+    const text = out.lines.map((l) => l.text).join('\n');
+    expect(text).toMatch(/No such file or directory/);
+    expect(text).toMatch(/cat posts\/a\.md/);
+  });
+
+  it('cat 不存在的文件报错', () => {
+    expect(execCommand('cat posts/zzz.md', makeState(), entries).lines[0]?.text).toMatch(
+      /No such file or directory/
+    );
   });
 
   it('cd lab 跳转到分组锚点', () => {
     expect(execCommand('cd lab', makeState(), entries).navigate?.href).toBe('/#lab');
+  });
+
+  it('cd posts 记住工作目录', () => {
+    const s = makeState();
+    execCommand('cd posts', s, entries);
+    expect(s.cwd).toBe('posts');
+  });
+
+  it('cd .. 从子目录回家', () => {
+    const s = makeState();
+    execCommand('cd posts', s, entries);
+    execCommand('cd ..', s, entries);
+    expect(s.cwd).toBe('');
+  });
+
+  it('cd ../notes 支持相对路径', () => {
+    const s = makeState();
+    execCommand('cd posts', s, entries);
+    execCommand('cd ../notes', s, entries);
+    expect(s.cwd).toBe('notes');
+  });
+
+  it('cd 未知目录报错且不改变 cwd', () => {
+    const s = makeState();
+    execCommand('cd posts', s, entries);
+    const out = execCommand('cd zzz', s, entries);
+    expect(out.lines[0]?.text).toMatch(/No such file or directory/);
+    expect(s.cwd).toBe('posts');
   });
 
   it('cd ~ 回首页', () => {

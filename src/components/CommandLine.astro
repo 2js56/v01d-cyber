@@ -26,7 +26,7 @@ const ctx: Ctx = {
 <div id="cli" data-ctx={JSON.stringify(ctx)}>
   <div id="cli-output" aria-live="polite"></div>
   <div class="cli-input-row">
-    <label class="prompt" for="cli-input">v01d@cyber:~$</label>
+    <label class="prompt" for="cli-input" id="cli-prompt">v01d@cyber:~$</label>
     <input id="cli-input" autocomplete="off" spellcheck="false" enterkeyhint="go" />
   </div>
 </div>
@@ -57,13 +57,26 @@ const ctx: Ctx = {
 
 <script>
   import { execCommand, makeState } from '../lib/commands';
+  import { tabComplete } from '../lib/complete';
   import { withBase } from '../lib/base';
 
   const root = document.getElementById('cli');
   const output = document.getElementById('cli-output')!;
   const input = document.getElementById('cli-input') as HTMLInputElement;
+  const promptEl = document.getElementById('cli-prompt')!;
   const ctx = JSON.parse(root!.dataset.ctx!);
   const state = makeState();
+
+  // 提示符跟随 cwd：v01d@cyber:~$ ↔ v01d@cyber:~/posts$
+  const updPrompt = () =>
+    (promptEl.textContent = `v01d@cyber:${state.cwd ? '~/' + state.cwd : '~'}$`);
+  // 候选列表即时输出（不走打字机，补全要快）
+  const putLine = (text: string, cls: string) => {
+    const el = document.createElement('div');
+    el.className = `line ${cls}`;
+    el.textContent = text;
+    output.appendChild(el);
+  };
 
   // grep 的全站索引：启动后拉取（纯静态 JSON，几十 KB）
   fetch(withBase('/search-index.json'))
@@ -118,8 +131,25 @@ const ctx: Ctx = {
       }
     }
     if (result.navigate) {
-      setTimeout(() => (location.href = withBase(result.navigate!.href)), 350);
+      const href = withBase(result.navigate.href);
+      setTimeout(() => {
+        // 同页锚点/回首页：SPA 滚动，不整页刷新（保住终端状态）
+        if (href.includes('#')) {
+          const target = document.getElementById(href.split('#')[1]!);
+          if (target) {
+            target.scrollIntoView({ behavior: 'smooth' });
+            return;
+          }
+        }
+        const home = withBase('/');
+        if (href === home && location.pathname + location.search === home) {
+          scrollTo({ top: 0, behavior: 'smooth' });
+          return;
+        }
+        location.href = href;
+      }, 350);
     }
+    updPrompt();
   }
 
   input.addEventListener('keydown', (e) => {
@@ -129,6 +159,16 @@ const ctx: Ctx = {
       const v = input.value;
       input.value = '';
       run(v);
+    }
+    // Tab 补全：命令名 / 目录 / 文章路径
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      const { matches, insert } = tabComplete(input.value, ctx, state.cwd);
+      if (insert !== null) input.value = insert;
+      if (matches.length > 1) {
+        putLine(`v01d@cyber:~$ ${input.value}`, 'prompt');
+        putLine(matches.join('  '), 'dim');
+      }
     }
   });
 

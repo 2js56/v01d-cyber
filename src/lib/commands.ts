@@ -37,9 +37,25 @@ export interface Result {
 
 export interface State {
   history: string[];
+  /** 当前目录：'' = ~（home），或 'posts' | 'notes' | 'lab' */
+  cwd: string;
 }
 
-export const makeState = (): State => ({ history: [] });
+export const makeState = (): State => ({ history: [], cwd: '' });
+
+/** 路径规范化：容忍 ~ / 绝对路径 / 相对路径 / .. / . / 尾斜杠 */
+function resolvePath(cwd: string, input: string): string {
+  const fromRoot = input.startsWith('~') || input.startsWith('/');
+  const stripped = input.replace(/^~/, '').replace(/^\/+/, '');
+  const base = fromRoot ? [] : cwd ? cwd.split('/') : [];
+  const out: string[] = [...base];
+  for (const seg of stripped.split('/')) {
+    if (!seg || seg === '.') continue;
+    if (seg === '..') out.pop();
+    else out.push(seg);
+  }
+  return out.join('/');
+}
 
 // serial experiments lain 首播日（1998-07-06，JST）—— uptime 从这天起算
 const LAIN_EPOCH = Date.parse('1998-07-06T00:00:00+09:00');
@@ -97,11 +113,15 @@ export function execCommand(raw: string, state: State, ctx: Ctx): Result {
               ...files(name, list),
             ]),
           };
-        return { lines: [{ text: 'lab/  notes/  posts/', cls: 'cyan' as const }] };
+        // home 列目录；在子目录里列该目录文件
+        if (state.cwd === '')
+          return { lines: [{ text: 'lab/  notes/  posts/', cls: 'cyan' as const }] };
+        const g = groups.find(([name]) => name === state.cwd)!;
+        return { lines: files(g[0], g[1]) };
       }
       const lines: Line[] = [];
       for (const d of dirs) {
-        const key = d.replace(/^~?\//, '').replace(/\/+$/, '');
+        const key = resolvePath(state.cwd, d);
         const g = groups.find(([name]) => name === key);
         if (!g) {
           lines.push({ text: `ls: ${d}: No such file or directory`, cls: 'err' });
@@ -114,18 +134,48 @@ export function execCommand(raw: string, state: State, ctx: Ctx): Result {
     }
 
     case 'cat': {
-      const n = Number(args[0]);
-      const e = all[n - 1];
-      if (!Number.isInteger(n) || !e) {
+      const arg = args[0];
+      if (!arg)
+        return { lines: [{ text: 'usage: cat <n> | cat <dir>/<file>.md', cls: 'err' }] };
+      // 纯数字：按全局编号（页面 [01]… 显示一致，1 与 01 均可）
+      if (/^\d+$/.test(arg)) {
+        const e = all[Number(arg) - 1];
+        if (!e)
+          return { lines: [{ text: `cat: ${arg}: No such file or directory`, cls: 'err' }] };
         return {
-          lines: [
-            { text: `cat: ${args[0] ?? ''}: No such entry (1-${all.length})`, cls: 'err' },
-          ],
+          lines: [{ text: `opening ${e.slug}.md …`, cls: 'dim' }],
+          navigate: { href: `/posts/${e.slug}` },
         };
       }
+      // 文件名：相对 cwd 解析（可省略 .md）
+      const path = resolvePath(state.cwd, arg).replace(/\.md$/, '');
+      const m = path.match(/^(posts|notes|lab)\/(.+)$/);
+      if (m) {
+        const list = m[1] === 'posts' ? ctx.posts : m[1] === 'notes' ? ctx.notes : ctx.lab;
+        const e = list.find((x) => x.slug === m[2]);
+        if (e)
+          return {
+            lines: [{ text: `opening ${e.slug}.md …`, cls: 'dim' }],
+            navigate: { href: `/posts/${e.slug}` },
+          };
+        return { lines: [{ text: `cat: ${arg}: No such file or directory`, cls: 'err' }] };
+      }
+      // 无目录前缀：home 下没有裸文件，全组找命中给出路径建议
+      let hint: { dir: string; slug: string } | null = null;
+      for (const [dir, list] of groups) {
+        const f = list.find((x) => x.slug === path);
+        if (f) {
+          hint = { dir, slug: f.slug };
+          break;
+        }
+      }
       return {
-        lines: [{ text: `opening ${e.slug}.md …`, cls: 'dim' }],
-        navigate: { href: `/posts/${e.slug}` },
+        lines: [
+          { text: `cat: ${arg}: No such file or directory`, cls: 'err' },
+          ...(hint
+            ? [{ text: `（它在 ${hint.dir}/ 下：cat ${hint.dir}/${hint.slug}.md）`, cls: 'dim' }]
+            : []),
+        ],
       };
     }
 
@@ -167,10 +217,12 @@ export function execCommand(raw: string, state: State, ctx: Ctx): Result {
 
     case 'cd': {
       const target = args[0] ?? '~';
-      if (target === '~' || target === '/') return { lines: [], navigate: { href: '/' } };
-      const known = ['posts', 'notes', 'lab'];
-      if (known.includes(target)) return { lines: [], navigate: { href: `/#${target}` } };
-      return { lines: [{ text: `cd: ${target}: No such page`, cls: 'err' }] };
+      const path = resolvePath(state.cwd, target);
+      const valid = path === '' || groups.some(([name]) => name === path);
+      if (!valid)
+        return { lines: [{ text: `cd: ${target}: No such file or directory`, cls: 'err' }] };
+      state.cwd = path;
+      return { lines: [], navigate: { href: path ? `/#${path}` : '/' } };
     }
 
     case 'whoami':
