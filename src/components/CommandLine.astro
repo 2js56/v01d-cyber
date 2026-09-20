@@ -121,4 +121,16 @@ const ctx: Ctx = {
       run(v);
     }
   });
+
+  // konami code: ↑↑↓↓←→←→BA → wired 模式切换
+  const KONAMI = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
+  let ki = 0;
+  addEventListener('keydown', (e) => {
+    ki = e.key === KONAMI[ki] ? ki + 1 : e.key === KONAMI[0] ? 1 : 0;
+    if (ki === KONAMI.length) {
+      ki = 0;
+      document.documentElement.classList.toggle('wired');
+      typeLine('↑↑↓↓←→←→BA — welcome to the WIRED.', 'purple');
+    }
+  });
 </script>

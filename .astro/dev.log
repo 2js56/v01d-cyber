@@ -7,3 +7,4 @@
 {"message":"watching for file changes...","label":null,"level":"info"}
 {"message":"all is not defined\n  Stack trace:\n    at Module.getStaticPaths (/Users/v01d/coding/MyaiProject/blog/src/pages/posts/[slug].astro:18:1)\n    [...] See full stack trace in the browser, or rerun with --verbose.","label":null,"level":"error"}
 {"message":"[200] /posts/heap-feng-shui 61ms","label":null,"level":"info"}
+{"message":"[200] / 10ms","label":null,"level":"info"}
