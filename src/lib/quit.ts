@@ -1,6 +1,6 @@
 import { withBase } from './base';
 
-// pager 习惯：按 q / Esc 回到 ~/garden。
+// pager 习惯：按 q / Esc 回到 ~/ghost。
 // 用 e.code（物理键位）判断 q —— 中文输入法下 e.key 是 'Process'，用 e.key 会失效；
 // isComposing（拼音组合中）不劫持，避免打断输入。
 export function bindQuitKey() {

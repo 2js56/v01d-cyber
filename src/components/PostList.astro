@@ -26,7 +26,7 @@ const slugOf = (e: Entry) => e.id.replace(/\.md$/, '');
 ---
 
 <div class="postlist">
-  <p class="cmdline">$ ls -R ~/garden</p>
+  <p class="cmdline">$ ls -R ~/ghost</p>
   {groups.map(({ dir, list }) => (
     <section id={dir} class="group">
       <p class="dirname">{dir}/</p>

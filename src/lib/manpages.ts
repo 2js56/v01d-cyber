@@ -22,7 +22,7 @@ SEE ALSO
 SYNOPSIS
        ls [dir] · ls -R
 DESCRIPTION
-       无参数：列出 ~/garden 下的子目录。
+       无参数：列出 ~/ghost 下的子目录。
        ls <dir>：列出该目录文件（posts / notes / lab）。
        ls -R：递归列出全部。
        文件带全局编号 [01]…，与页面显示和 cat <n> 一致。
@@ -99,7 +99,7 @@ DESCRIPTION
   rm: `NAME
        rm — remove files or directories
 DESCRIPTION
-       rm -rf / 会删除 /dev/garden。大概 1.5 秒。
+       rm -rf / 会删除 /dev/ghost。大概 1.5 秒。
        然后 just kidding :)`,
 };
 

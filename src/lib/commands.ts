@@ -323,7 +323,7 @@ function runCase(cmd: string, args: string[], state: State, ctx: Ctx, stdin?: st
 
     case 'rm':
       return {
-        lines: [{ text: 'rm: 正在删除 /dev/garden …', cls: 'err' }],
+        lines: [{ text: 'rm: 正在删除 /dev/ghost …', cls: 'err' }],
         effect: 'rmrf',
       };
 
@@ -353,7 +353,7 @@ function runCase(cmd: string, args: string[], state: State, ctx: Ctx, stdin?: st
           { text: '    7 ?         00:00:00 wired.socket', cls: '' },
           { text: '   42 ?         24:97:33 crt-daemon --scanlines', cls: '' },
           { text: '  313 ?         00:13:37 art-pipeline --fetch-anilist', cls: '' },
-          { text: '  774 pts/0     00:00:00 garden-grow', cls: '' },
+          { text: '  774 pts/0     00:00:00 ghost-in-shell', cls: '' },
         ],
       };
 

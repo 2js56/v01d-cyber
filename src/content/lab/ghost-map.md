@@ -1,5 +1,5 @@
 ---
-title: "garden-map：本站是如何搭建的"
+title: "ghost-map：本站是如何搭建的"
 date: 2026-09-15
 tags: [astro, web]
 mood: "自己动手，丰衣足食"
