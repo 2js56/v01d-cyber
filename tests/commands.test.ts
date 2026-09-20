@@ -10,6 +10,20 @@ const entries: Ctx = {
   lab: [{ slug: 'l1', title: 'Lab', date: new Date('2026-03-01') }],
 };
 
+const searchCtx: Ctx = {
+  ...entries,
+  search: [
+    {
+      slug: 'a',
+      collection: 'posts',
+      title: 'Alpha',
+      tags: ['免杀'],
+      text: '从明文 shellcode 到内存里的伪装，猫鼠游戏十年',
+    },
+    { slug: 'n1', collection: 'notes', title: 'Note', tags: [], text: 'nothing here' },
+  ],
+};
+
 describe('execCommand', () => {
   it('ls 列出各分组文件', () => {
     const out = execCommand('ls', makeState(), entries);
@@ -67,8 +81,10 @@ describe('execCommand', () => {
     expect(execCommand('whoami', makeState(), entries).lines[0]?.text).toMatch(/v01d/);
   });
 
-  it('help 列出命令', () => {
-    expect(execCommand('help', makeState(), entries).lines[0]?.text).toContain('ls');
+  it('help 列出命令（含 grep）', () => {
+    const text = execCommand('help', makeState(), entries).lines[0]?.text ?? '';
+    expect(text).toContain('ls');
+    expect(text).toContain('grep');
   });
 
   it('rm 触发假删除', () => {
@@ -80,59 +96,120 @@ describe('execCommand', () => {
   });
 });
 
-describe('注入彩蛋', () => {
-  it(`' OR '1'='1 触发登录绕过整活`, () => {
-    const text = execCommand("' OR '1'='1", makeState(), entries).lines.map((l) => l.text).join('\n');
-    expect(text).toMatch(/SELECT/);
-    expect(text).toMatch(/admin/);
-    expect(text).toMatch(/静态/);
+describe('grep 全站搜索', () => {
+  it('grep 无参数提示用法', () => {
+    const text = execCommand('grep', makeState(), searchCtx).lines.map((l) => l.text).join('\n');
+    expect(text).toMatch(/usage: grep/);
   });
 
-  it(`admin'-- 同样命中 SQL 彩蛋`, () => {
-    const text = execCommand("admin'--", makeState(), entries).lines.map((l) => l.text).join('\n');
-    expect(text).toMatch(/SELECT/);
-  });
-
-  it('DROP TABLE 彩蛋', () => {
-    const text = execCommand("'; DROP TABLE members; --", makeState(), entries).lines
+  it('grep 命中 tags/正文并给出 cat 序号', () => {
+    const text = execCommand('grep 免杀', makeState(), searchCtx).lines
       .map((l) => l.text)
       .join('\n');
-    expect(text).toMatch(/DROP TABLE/);
-    expect(text).toMatch(/0 rows affected/);
+    expect(text).toMatch(/1 hit/);
+    expect(text).toMatch(/posts\/a\.md/);
+    expect(text).toMatch(/内存里的伪装/);
+    expect(text).toMatch(/cat <n>/);
   });
 
-  it('sleep() 时间盲注彩蛋', () => {
-    const text = execCommand("1 AND sleep(5)--", makeState(), entries).lines.map((l) => l.text).join('\n');
-    expect(text).toMatch(/立即返回/);
-  });
-
-  it('UNION SELECT 返回全站唯一真实的表（视觉库）', () => {
-    const text = execCommand("' UNION SELECT slug FROM garden --", makeState(), entries).lines
+  it('grep 多关键词按 AND 过滤', () => {
+    const both = execCommand('grep shellcode 伪装', makeState(), searchCtx).lines
       .map((l) => l.text)
       .join('\n');
-    expect(text).toMatch(/UNION/);
-    expect(text).toMatch(/lain/i);
-    expect(text).toMatch(/唯一真实存在的表/);
-  });
-
-  it('<script> 触发 XSS 彩蛋', () => {
-    const text = execCommand('<script>alert(1)</script>', makeState(), entries).lines
+    expect(both).toMatch(/posts\/a\.md/);
+    const one = execCommand('grep shellcode 不存在的词', makeState(), searchCtx).lines
       .map((l) => l.text)
       .join('\n');
-    expect(text).toMatch(/\[xss\]/);
-    expect(text).toMatch(/textContent/);
+    expect(one).toMatch(/无匹配/);
   });
 
-  it('document.cookie 彩蛋', () => {
-    const text = execCommand('<img src=x onerror=alert(document.cookie)>', makeState(), entries).lines
+  it('grep 无命中报错', () => {
+    const text = execCommand('grep 不存在的关键词', makeState(), searchCtx).lines
       .map((l) => l.text)
       .join('\n');
-    expect(text).toMatch(/localStorage/);
+    expect(text).toMatch(/无匹配/);
   });
 
-  it('普通未知命令不受彩蛋影响', () => {
-    expect(execCommand('zzz', makeState(), entries).lines[0]?.text).toMatch(
-      /command not found: zzz/
+  it('grep 索引未加载时提示', () => {
+    const text = execCommand('grep anything', makeState(), entries).lines
+      .map((l) => l.text)
+      .join('\n');
+    expect(text).toMatch(/索引/);
+  });
+});
+
+describe('假安全工具', () => {
+  it('nmap 假扫描全端口 filtered', () => {
+    const text = execCommand('nmap -sV 2js56.github.io', makeState(), entries).lines
+      .map((l) => l.text)
+      .join('\n');
+    expect(text).toMatch(/filtered/);
+    expect(text).toMatch(/65535/);
+  });
+
+  it('sqlmap 发现目标不是数据库', () => {
+    const text = execCommand('sqlmap -u https://v01d.cyber/', makeState(), entries).lines
+      .map((l) => l.text)
+      .join('\n');
+    expect(text).toMatch(/dbms=none/);
+  });
+
+  it('ssh 连接被拒', () => {
+    const text = execCommand('ssh root@v01d.cyber', makeState(), entries).lines
+      .map((l) => l.text)
+      .join('\n');
+    expect(text).toMatch(/Connection refused/);
+    expect(text).toMatch(/后端/);
+  });
+
+  it('hydra 假破解一无所获', () => {
+    const text = execCommand('hydra -l admin -P rockyou.txt v01d.cyber ssh', makeState(), entries)
+      .lines.map((l) => l.text)
+      .join('\n');
+    expect(text).toMatch(/0 of 1/);
+  });
+});
+
+describe('假系统命令', () => {
+  it('ps 列出假进程', () => {
+    const text = execCommand('ps aux', makeState(), entries).lines.map((l) => l.text).join('\n');
+    expect(text).toMatch(/lain\.service/);
+    expect(text).toMatch(/wired/);
+  });
+
+  it('netstat（含 ss 别名）列出假连接', () => {
+    for (const cmd of ['netstat -antp', 'ss -t']) {
+      const text = execCommand(cmd, makeState(), entries).lines.map((l) => l.text).join('\n');
+      expect(text).toMatch(/ESTABLISHED/);
+      expect(text).toMatch(/wired/i);
+    }
+  });
+
+  it('uptime 从 lain 开播日起算天数', () => {
+    const text = execCommand('uptime', makeState(), entries).lines.map((l) => l.text).join('\n');
+    expect(text).toMatch(/up \d+ days/);
+    expect(text).toMatch(/wired/);
+  });
+
+  it('history 输出刚执行过的命令', () => {
+    const state = makeState();
+    execCommand('whoami', state, entries);
+    const text = execCommand('history', state, entries).lines.map((l) => l.text).join('\n');
+    expect(text).toMatch(/whoami/);
+    expect(text).toMatch(/history/);
+  });
+});
+
+describe('注入彩蛋已移除', () => {
+  it(`' OR '1'='1 回归 command not found`, () => {
+    expect(execCommand("' OR '1'='1", makeState(), entries).lines[0]?.text).toMatch(
+      /command not found/
+    );
+  });
+
+  it('<script> 不再触发 XSS 彩蛋', () => {
+    expect(execCommand('<script>alert(1)</script>', makeState(), entries).lines[0]?.text).toMatch(
+      /command not found/
     );
   });
 });

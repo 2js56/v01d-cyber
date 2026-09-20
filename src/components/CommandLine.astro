@@ -64,6 +64,12 @@ const ctx: Ctx = {
   const ctx = JSON.parse(root!.dataset.ctx!);
   const state = makeState();
 
+  // grep 的全站索引：启动后拉取（纯静态 JSON，几十 KB）
+  fetch(withBase('/search-index.json'))
+    .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
+    .then((search) => (ctx.search = search))
+    .catch(() => {});
+
   // 打字机回显：每行逐字输出
   const typeLine = (text: string, cls: string) =>
     new Promise<void>((resolve) => {

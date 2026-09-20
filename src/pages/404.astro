@@ -1,0 +1,80 @@
+---
+import TerminalShell from '../layouts/TerminalShell.astro';
+import { withBase } from '../lib/base';
+---
+
+<TerminalShell title="404 packet dropped — v01d@cyber">
+  <section class="nf">
+    <p class="cmdline">$ GET <span id="req-path">/…</span></p>
+    <h1 class="glitch" data-text="404">404</h1>
+    <p class="msg">packet dropped —— 路由到此为止，这个包在交换机另一头被丢弃了。</p>
+    <ul class="opts">
+      <li><a href={withBase('/')}>cd ~/garden</a> — 回首页（按 <kbd>q</kbd> / <kbd>Esc</kbd> 也行）</li>
+      <li>终端里敲 <code>ls</code> 看全部文章，<code>grep &lt;关键词&gt;</code> 搜正文</li>
+    </ul>
+  </section>
+</TerminalShell>
+
+<style>
+  .nf { padding: 12vh 7% 20vh; max-width: 1100px; }
+  .cmdline { color: var(--green); font-size: 13px; margin-bottom: 24px; }
+  .glitch {
+    position: relative;
+    font-size: clamp(72px, 16vw, 150px);
+    font-weight: 700;
+    line-height: 1;
+    color: var(--fg);
+    text-shadow: 0 0 24px rgba(138, 216, 255, 0.35);
+    margin: 0 0 20px;
+    user-select: none;
+  }
+  /* 双层错位抖动：青/粉两层各切一块，错帧闪 */
+  .glitch::before,
+  .glitch::after {
+    content: attr(data-text);
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+  }
+  .glitch::before {
+    color: var(--cyan);
+    transform: translate(-3px, -2px);
+    clip-path: inset(12% 0 58% 0);
+    animation: drop1 2.4s infinite steps(1);
+  }
+  .glitch::after {
+    color: #ff5f8f;
+    transform: translate(3px, 2px);
+    clip-path: inset(62% 0 8% 0);
+    animation: drop2 2.4s infinite steps(1);
+  }
+  @keyframes drop1 {
+    0%, 86%, 100% { opacity: 0; }
+    87% { opacity: 0.9; transform: translate(-8px, -2px); clip-path: inset(8% 0 66% 0); }
+    90% { opacity: 0.9; transform: translate(4px, -1px); clip-path: inset(30% 0 40% 0); }
+    93% { opacity: 0.9; transform: translate(-4px, 1px); clip-path: inset(50% 0 22% 0); }
+  }
+  @keyframes drop2 {
+    0%, 86%, 100% { opacity: 0; }
+    88% { opacity: 0.9; transform: translate(7px, 2px); clip-path: inset(60% 0 12% 0); }
+    91% { opacity: 0.9; transform: translate(-6px, 1px); clip-path: inset(20% 0 55% 0); }
+    94% { opacity: 0.9; transform: translate(5px, -2px); clip-path: inset(44% 0 34% 0); }
+  }
+  .msg { color: var(--fg); font-size: 15px; margin-bottom: 28px; }
+  .opts { list-style: none; padding: 0; display: grid; gap: 10px; color: var(--dim); font-size: 13px; }
+  .opts a { color: var(--green); }
+  .opts a:hover { text-shadow: 0 0 8px var(--green); }
+  .opts code, .opts kbd {
+    color: var(--cyan);
+    border: 1px solid #1a2030;
+    border-radius: 4px;
+    padding: 1px 6px;
+  }
+</style>
+
+<script>
+  import { bindQuitKey } from '../lib/quit';
+
+  document.getElementById('req-path')!.textContent = location.pathname;
+  bindQuitKey();
+</script>
