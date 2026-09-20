@@ -11,7 +11,9 @@ let audio: HTMLAudioElement | null = null;
 let ducked = false;
 
 const ensure = () => {
-  if (!audio) {
+  // error 坏死的实例不复用：error 后 play() 永远立即拒绝，
+  // 置弃重建让下一次 toggle/kick 重新加载（网络抖动 404 自愈）
+  if (!audio || audio.error) {
     audio = new Audio(withBase('/audio/duvet.mp3'));
     audio.loop = true;
     audio.preload = 'metadata';
@@ -105,7 +107,8 @@ async function toggleInner(): Promise<'on' | 'off' | 'missing'> {
 
 /** 进站自动起播：立即尝试播放（Chrome 对常访站点放行），同时挂好
  *  首次交互即播的兜底——若先等尝试失败再挂，尝试 pending 期间用户的
- *  第一次交互会白白错过。成功则撤兜底。 */
+ *  第一次交互会白白错过。成功则撤兜底；失败（被拦/文件缺失）则兜底
+ *  常驻，直到某次交互真正播起来。 */
 let resumed = false;
 export function bgmResume() {
   if (resumed) return;
@@ -116,18 +119,30 @@ export function bgmResume() {
   } catch {}
   syncBgmIndicator();
   if (!want) return;
+  let armed = false;
+  const arm = () => {
+    if (armed) return;
+    armed = true;
+    addEventListener('pointerdown', kick);
+    addEventListener('keydown', kick);
+  };
   const unarm = () => {
+    armed = false;
     removeEventListener('pointerdown', kick);
     removeEventListener('keydown', kick);
   };
   const kick = () => {
     unarm();
-    bgmToggle();
+    bgmToggle().then((st) => {
+      // kick 也可能撞上 pending（返回 off）：只要没真播起来，兜底重挂
+      if (st !== 'on') arm();
+    });
   };
-  addEventListener('pointerdown', kick);
-  addEventListener('keydown', kick);
+  arm();
   bgmToggle().then((st) => {
     if (st === 'on') unarm();
+    // 首次尝试失败，且兜底可能已被 pending 期间的交互烧掉——补挂
+    else arm();
   });
 }
 
@@ -144,6 +159,8 @@ export function syncBgmIndicator() {
   // 不用 ♪̸（组合斜线）——多数字体渲染模糊；统一 ♪，靠亮度/动画区分
   el.textContent = '♪';
   el.classList.toggle('on', on);
+  // 静音态给一句解释：没声不是坏了，点一下就播（偏好会记住）
+  el.title = on ? 'mpg123 — bôa 「Duvet」' : '♪ 静音中 —— 点一下就播 Duvet';
 }
 
 function fade(a: HTMLAudioElement, to: number, ms: number): Promise<void> {
