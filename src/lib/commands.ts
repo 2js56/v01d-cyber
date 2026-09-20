@@ -1,3 +1,5 @@
+import manifest from '../../public/art/manifest.json';
+
 export interface Entry {
   slug: string;
   title: string;
@@ -29,6 +31,57 @@ export interface State {
 }
 
 export const makeState = (): State => ({ history: [] });
+
+// —— 假注入彩蛋：整站 0 数据库、渲染走 textContent，注入纯属打在棉花上 ——
+const SQLI_RE =
+  /union\s+select|drop\s+table|'\s*or\s*'|'\d+'\s*=\s*'\d+|\b1\s*=\s*1\b|sleep\s*\(|benchmark\s*\(|'--|--\s*$/i;
+
+function injectionEgg(raw: string): Line[] | null {
+  // XSS 系
+  if (/<script/i.test(raw))
+    return [
+      { text: '[xss] 拦截到 <script> 注入', cls: 'err' },
+      { text: '渲染管线：textContent() —— payload 被当作纯文本羞辱了', cls: 'dim' },
+      { text: '想弹窗？这个站的 JS 比你的 payload 写得好。', cls: '' },
+    ];
+  if (/document\.cookie/i.test(raw))
+    return [
+      { text: '[xss] document.cookie → ""', cls: 'err' },
+      { text: '本站全部家当：localStorage["crt"] = "on" | "off"。拿去慢慢享（用）。', cls: 'dim' },
+    ];
+  if (/javascript:|on(error|click|load|mouseover)\s*=|alert\s*\(|<img/i.test(raw))
+    return [
+      { text: '[xss] payload 检测命中', cls: 'err' },
+      { text: '可惜整个站没有一个 innerHTML 会接你的茬。', cls: 'dim' },
+    ];
+  // SQLi 系
+  if (/union\s+select/i.test(raw)) {
+    const titles = Object.values(manifest).map((m) => m.title);
+    return [
+      { text: `[sql] SELECT slug FROM garden UNION ${raw.trim()};`, cls: 'err' },
+      { text: `[sql] → ${titles.length} rows: ${titles.join(' / ')}`, cls: 'cyan' },
+      { text: '这是本站唯一真实存在的表。', cls: 'dim' },
+    ];
+  }
+  if (/drop\s+table/i.test(raw))
+    return [
+      { text: '[sql] DROP TABLE → OK, 0 rows affected', cls: 'err' },
+      { text: '删掉的表和会员制一样，从来就没存在过。', cls: 'dim' },
+    ];
+  if (/sleep\s*\(|benchmark\s*\(/i.test(raw))
+    return [
+      { text: '[sql] SELECT sleep(5) → 立即返回', cls: 'err' },
+      { text: '时间盲注失效：静态站的响应时间不值得盲。', cls: 'dim' },
+    ];
+  if (SQLI_RE.test(raw))
+    return [
+      { text: "[sql] SELECT * FROM users WHERE id='' OR '1'='1';", cls: 'err' },
+      { text: '[sql] → 1 row: (admin, ********)', cls: 'cyan' },
+      { text: '登录成功，欢迎回来，admin。……才怪：', cls: '' },
+      { text: '本站 0 个数据库、0 条查询，你的注入打在了纯静态 HTML 上。', cls: 'dim' },
+    ];
+  return null;
+}
 
 export function execCommand(raw: string, state: State, ctx: Ctx): Result {
   const trimmed = raw.trim();
@@ -132,9 +185,12 @@ export function execCommand(raw: string, state: State, ctx: Ctx): Result {
         effect: 'rmrf',
       };
 
-    default:
+    default: {
+      const egg = injectionEgg(trimmed);
+      if (egg) return { lines: egg };
       return {
         lines: [{ text: `command not found: ${cmd} (try 'help')`, cls: 'err' }],
       };
+    }
   }
 }
