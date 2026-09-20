@@ -92,7 +92,7 @@ export function execCommand(raw: string, state: State, ctx: Ctx): Result {
     case 'whoami':
       return {
         lines: [
-          { text: 'v01d — 数码花园管理员 / pwn 研究者 / 赛璐璐考古学家', cls: 'green' },
+          { text: 'v01d — web 渗透 / 内网安全 / shellcode 免杀 / 赛璐璐考古学家', cls: 'green' },
         ],
       };
 

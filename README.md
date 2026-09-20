@@ -20,8 +20,8 @@ npm run preview    # 预览构建产物
 ---
 title: "文章标题"
 date: 2026-09-20
-tags: [pwn, heap]
-anime: gits_sac      # 可选：关联名作，自动配官方视觉做封面/头图
+tags: [免杀, 内网]
+anime: psychopass    # 可选：关联名作，自动配官方视觉做封面/头图
 mood: "写时的心情一句话"   # 可选
 draft: false
 ---
