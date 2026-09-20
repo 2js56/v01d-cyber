@@ -20,25 +20,27 @@ SEE ALSO
   ls: `NAME
        ls — list directory contents
 SYNOPSIS
-       ls [dir] · ls -R
+       ls [dir] · ls -R · ls -a
 DESCRIPTION
        无参数：列出 ~/ghost 下的子目录。
        ls <dir>：列出该目录文件（posts / notes / lab）。
        ls -R：递归列出全部。
+       ls -a：显示隐藏项。根下有些目录平时不表态。
        文件带全局编号 [01]…，与页面显示和 cat <n> 一致。
 SEE ALSO
        cat(1), cd(1), grep(1)`,
   cat: `NAME
        cat — concatenate and print files
 SYNOPSIS
-       cat <n> · cat <dir>/<file>[.md]
+       cat <n> · cat <dir>/<file>[.md] · cat /etc/passwd
 DESCRIPTION
        两种打开方式：全局编号（cat 1 或 cat 01），或文件路径
        （cat posts/evasion-decade.md，扩展名可省略）。
        在子目录里可以用相对路径：cat evasion-decade.md。
-       管道中（cat x | grep …）输出正文纯文本而非跳转。
+       系统文件直接 cat（/etc/passwd、/var/log/site.log …），
+       管道里输出纯文本而非跳转。
 SEE ALSO
-       ls(1), grep(1)`,
+       ls(1), grep(1), dmesg(1)`,
   cd: `NAME
        cd — change working directory
 SYNOPSIS
@@ -128,6 +130,12 @@ DESCRIPTION
 DESCRIPTION
        自 serial experiments lain 开播日（1998-07-06）起算，
        显示你与 wired 连接的第 N 天。数字是真的，意义是你给的。`,
+  dmesg: `NAME
+       dmesg — print or control the kernel ring buffer
+DESCRIPTION
+       启动日志。与 cat /var/log/dmesg 同源。
+       注意 clock 那行：这台机器认为 1998 与 2026 可以双启动。
+       它没有错。`,
   nmap: `NAME
        nmap — Network Mapper
 DESCRIPTION

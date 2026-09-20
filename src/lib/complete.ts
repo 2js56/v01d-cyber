@@ -36,13 +36,15 @@ export function tabComplete(input: string, ctx: Ctx, cwd: string): Completion {
   // 命令位置：光标前只有空白 → 补命令名
   if (before.trim() === '') return done(COMMANDS.filter((c) => c.startsWith(token)));
 
-  // 参数位置：目录（home 相对）+ 文件（home 相对路径；cwd 内再加裸文件名）
+  // 参数位置：目录（home 相对）+ 文件（home 相对路径；cwd 内再加裸文件名）。
+  // 系统文件可补全；.ghost 不进候选 —— 隐藏目录要靠 ls -a 自己发现
   const files = (['posts', 'notes', 'lab'] as const).flatMap((dir) => {
     const list = dir === 'posts' ? ctx.posts : dir === 'notes' ? ctx.notes : ctx.lab;
     const names = list.map((e) => `${e.slug}.md`);
     return cwd === dir ? [...names.map((n) => `${dir}/${n}`), ...names] : names.map((n) => `${dir}/${n}`);
   });
-  const candidates = ['lab/', 'notes/', 'posts/', ...files];
+  const sys = ['etc/', 'etc/passwd', 'etc/motd', 'var/', 'var/log/', 'var/log/site.log', 'var/log/access.log', 'var/log/dmesg'];
+  const candidates = ['lab/', 'notes/', 'posts/', ...files, ...sys];
   const t = token.replace(/^~?\//, '');
   if (!t) return { matches: candidates, insert: null };
   // token 以 / 结尾说明已在往目录里补文件，不再列目录本身

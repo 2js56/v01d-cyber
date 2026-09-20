@@ -1,6 +1,7 @@
 import { manPage } from './manpages';
 import { residueFor } from './residue';
 import { whoamiLine } from './visitor';
+import { SYSFILES, SYSDIRS } from './sysfiles';
 
 export interface Entry {
   slug: string;
@@ -136,7 +137,7 @@ function runCase(cmd: string, args: string[], state: State, ctx: Ctx, stdin?: st
           },
           { text: '用法: man <cmd> 看手册 · cat <n|文件> · cd <目录> · ↑↓ 历史 · Ctrl+R 搜索', cls: 'dim' },
           { text: '管道: ls | grep 免杀 —— 用 | 把命令串起来', cls: 'dim' },
-          { text: 'installed: ps netstat ss uptime history nmap sqlmap ssh hydra', cls: 'cyan' },
+          { text: 'installed: ps netstat ss uptime dmesg history nmap sqlmap ssh hydra', cls: 'cyan' },
           { text: '彩蛋自己找。（提示：上上下下左右左右BA）', cls: 'dim' },
         ],
       };
@@ -156,11 +157,13 @@ function runCase(cmd: string, args: string[], state: State, ctx: Ctx, stdin?: st
     }
 
     case 'ls': {
-      // Unix 语义：无参数只列子目录名；ls <dir> 进目录；-R 递归全列。
+      // Unix 语义：无参数只列子目录名；ls <dir> 进目录；-R 递归全列；
+      // -a 显示隐藏（.ghost/ 与 dotfile —— 发现本身就是奖励）。
       // 文件带全局编号 [01]…，与页面显示和 cat <n> 一致（cat 1 / cat 01 均可）。
       const flags = args.filter((a) => a.startsWith('-'));
       const dirs = args.filter((a) => !a.startsWith('-'));
-      const recursive = flags.some((f) => /[Ra]/.test(f));
+      const all = flags.some((f) => /a/.test(f));
+      const recursive = flags.some((f) => /[Rr]/.test(f));
       const offset = (name: string) =>
         name === 'posts'
           ? 0
@@ -175,23 +178,61 @@ function runCase(cmd: string, args: string[], state: State, ctx: Ctx, stdin?: st
               cls: '',
             }) as Line
         );
+      // 系统目录内容：SYSFILES 键按前缀归入目录，dotfile 只在 -a 出现
+      const sysNames = (dir: string): string[] => {
+        const prefix = `${dir}/`;
+        const names = new Set<string>();
+        for (const k of Object.keys(SYSFILES)) {
+          if (!k.startsWith(prefix)) continue;
+          const rest = k.slice(prefix.length);
+          if (rest.includes('/')) names.add(`${rest.split('/')[0]}/`);
+          else if (!rest.startsWith('.') || all) names.add(rest);
+        }
+        return [...names].sort();
+      };
+      const sysLines = (dir: string, header: boolean): Line[] => {
+        const names = sysNames(dir);
+        if (!names.length) return [];
+        return [
+          ...(header ? [{ text: `${dir}:`, cls: 'cyan' as const }] : []),
+          { text: names.join('  '), cls: 'cyan' as const },
+        ];
+      };
       if (!dirs.length) {
         if (recursive)
           return {
-            lines: groups.flatMap(([name, list]) => [
-              { text: `${name}:`, cls: 'cyan' as const },
-              ...files(name, list),
-            ]),
+            lines: [
+              ...groups.flatMap(([name, list]) => [
+                { text: `${name}:`, cls: 'cyan' as const },
+                ...files(name, list),
+              ]),
+              ...sysLines('etc', true),
+              ...sysLines('var', true),
+              ...sysLines('var/log', true),
+              ...(all ? sysLines('.ghost', true) : []),
+            ],
           };
-        // home 列目录；在子目录里列该目录文件
+        // home 列目录（系统目录也在根上：~ 与 / 同根）；子目录里列该目录内容
         if (state.cwd === '')
-          return { lines: [{ text: 'lab/  notes/  posts/', cls: 'cyan' as const }] };
+          return {
+            lines: [
+              {
+                text: all ? '.ghost/  etc/  lab/  notes/  posts/  var/' : 'lab/  notes/  posts/',
+                cls: 'cyan' as const,
+              },
+            ],
+          };
+        if (SYSDIRS.includes(state.cwd)) return { lines: sysLines(state.cwd, false) };
         const g = groups.find(([name]) => name === state.cwd)!;
         return { lines: files(g[0], g[1]) };
       }
       const lines: Line[] = [];
       for (const d of dirs) {
         const key = resolvePath(state.cwd, d);
+        if (SYSDIRS.includes(key)) {
+          lines.push(...sysLines(key, dirs.length > 1 || recursive));
+          continue;
+        }
         const g = groups.find(([name]) => name === key);
         if (!g) {
           lines.push({ text: `ls: ${d}: No such file or directory`, cls: 'err' });
@@ -218,8 +259,21 @@ function runCase(cmd: string, args: string[], state: State, ctx: Ctx, stdin?: st
           stdout: bodyOf(e.slug, ctx),
         };
       }
+      // 系统文件（/etc/passwd、~/.ghost/.bash_history 等）：输出全文，管道吃 stdout
+      const sp = resolvePath(state.cwd, arg);
+      if (SYSFILES[sp])
+        return {
+          lines: SYSFILES[sp].map((t) => ({ text: t, cls: 'dim' as const })),
+          stdout: SYSFILES[sp],
+        };
+      if (sp === 'etc/shadow')
+        return {
+          lines: [
+            { text: 'cat: /etc/shadow: Permission denied —— 密码不在文件里，在文件的间隙里', cls: 'err' },
+          ],
+        };
       // 文件名：相对 cwd 解析（可省略 .md）
-      const path = resolvePath(state.cwd, arg).replace(/\.md$/, '');
+      const path = sp.replace(/\.md$/, '');
       const m = path.match(/^(posts|notes|lab)\/(.+)$/);
       if (m) {
         const list = m[1] === 'posts' ? ctx.posts : m[1] === 'notes' ? ctx.notes : ctx.lab;
@@ -307,6 +361,11 @@ function runCase(cmd: string, args: string[], state: State, ctx: Ctx, stdin?: st
     case 'cd': {
       const target = args[0] ?? '~';
       const path = resolvePath(state.cwd, target);
+      // 系统目录：切过去就行，没有对应页面锚点，不导航
+      if (SYSDIRS.includes(path)) {
+        state.cwd = path;
+        return { lines: [] };
+      }
       const valid = path === '' || groups.some(([name]) => name === path);
       if (!valid)
         return { lines: [{ text: `cd: ${target}: No such file or directory`, cls: 'err' }] };
@@ -398,6 +457,12 @@ function runCase(cmd: string, args: string[], state: State, ctx: Ctx, stdin?: st
     case 'history':
       return {
         lines: state.history.map((h, i) => ({ text: `${String(i + 1).padStart(4)}  ${h}`, cls: '' })),
+      };
+
+    case 'dmesg':
+      return {
+        lines: SYSFILES['var/log/dmesg']!.map((t) => ({ text: t, cls: 'dim' as const })),
+        stdout: SYSFILES['var/log/dmesg'],
       };
 
     case 'uptime': {
