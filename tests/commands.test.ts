@@ -27,18 +27,46 @@ const searchCtx: Ctx = {
 };
 
 describe('execCommand', () => {
-  it('ls 列出各分组文件（含日期）', () => {
-    const out = execCommand('ls', makeState(), entries);
-    const text = out.lines.map((l) => l.text).join('\n');
+  it('ls 无参数只列出子目录名（Unix 语义，不递归）', () => {
+    const text = execCommand('ls', makeState(), entries).lines.map((l) => l.text).join('\n');
     expect(text).toContain('posts/');
+    expect(text).toContain('notes/');
+    expect(text).toContain('lab/');
+    expect(text).not.toContain('a.md');
+  });
+
+  it('ls posts 进目录列文件，带全局编号', () => {
+    const text = execCommand('ls posts', makeState(), entries).lines.map((l) => l.text).join('\n');
+    expect(text).toContain('[01]');
     expect(text).toContain('a.md');
     expect(text).toContain('2026-01-02');
+    expect(text).not.toContain('n1.md');
+  });
+
+  it('ls 尾斜杠与 ~/ 前缀均可容忍', () => {
+    expect(execCommand('ls posts/', makeState(), entries).lines.map((l) => l.text).join('\n')).toContain('a.md');
+    expect(execCommand('ls ~/notes', makeState(), entries).lines.map((l) => l.text).join('\n')).toContain('n1.md');
+  });
+
+  it('ls -R 递归列出全部', () => {
+    const text = execCommand('ls -R', makeState(), entries).lines.map((l) => l.text).join('\n');
+    expect(text).toContain('a.md');
     expect(text).toContain('n1.md');
     expect(text).toContain('l1.md');
   });
 
+  it('ls 未知目录报 No such file or directory', () => {
+    const text = execCommand('ls zzz', makeState(), entries).lines.map((l) => l.text).join('\n');
+    expect(text).toMatch(/No such file or directory/);
+  });
+
   it('cat 2 按列表序号打开第二篇', () => {
     const out = execCommand('cat 2', makeState(), entries);
+    expect(out.navigate?.href).toBe('/posts/b');
+  });
+
+  it('cat 02 补零编号同样可用（与页面 [02] 显示一致）', () => {
+    const out = execCommand('cat 02', makeState(), entries);
     expect(out.navigate?.href).toBe('/posts/b');
   });
 

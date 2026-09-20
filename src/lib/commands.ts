@@ -69,19 +69,49 @@ export function execCommand(raw: string, state: State, ctx: Ctx): Result {
         ],
       };
 
-    case 'ls':
-      return {
-        lines: groups.flatMap(([dir, list]) => [
-          { text: `${dir}/`, cls: 'cyan' as const },
-          ...list.map(
-            (e) =>
-              ({
-                text: `  ${e.slug}.md  ${e.date.slice(0, 10)}`,
-                cls: '',
-              }) as Line
-          ),
-        ]),
-      };
+    case 'ls': {
+      // Unix 语义：无参数只列子目录名；ls <dir> 进目录；-R 递归全列。
+      // 文件带全局编号 [01]…，与页面显示和 cat <n> 一致（cat 1 / cat 01 均可）。
+      const flags = args.filter((a) => a.startsWith('-'));
+      const dirs = args.filter((a) => !a.startsWith('-'));
+      const recursive = flags.some((f) => /[Ra]/.test(f));
+      const offset = (name: string) =>
+        name === 'posts'
+          ? 0
+          : name === 'notes'
+            ? ctx.posts.length
+            : ctx.posts.length + ctx.notes.length;
+      const files = (name: string, list: Entry[]): Line[] =>
+        list.map(
+          (e, i) =>
+            ({
+              text: `  [${String(offset(name) + i + 1).padStart(2, '0')}]  ${e.slug}.md  ${e.date.slice(0, 10)}`,
+              cls: '',
+            }) as Line
+        );
+      if (!dirs.length) {
+        if (recursive)
+          return {
+            lines: groups.flatMap(([name, list]) => [
+              { text: `${name}:`, cls: 'cyan' as const },
+              ...files(name, list),
+            ]),
+          };
+        return { lines: [{ text: 'lab/  notes/  posts/', cls: 'cyan' as const }] };
+      }
+      const lines: Line[] = [];
+      for (const d of dirs) {
+        const key = d.replace(/^~?\//, '').replace(/\/+$/, '');
+        const g = groups.find(([name]) => name === key);
+        if (!g) {
+          lines.push({ text: `ls: ${d}: No such file or directory`, cls: 'err' });
+          continue;
+        }
+        if (dirs.length > 1 || recursive) lines.push({ text: `${g[0]}:`, cls: 'cyan' });
+        lines.push(...files(g[0], g[1]));
+      }
+      return { lines };
+    }
 
     case 'cat': {
       const n = Number(args[0]);
