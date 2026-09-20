@@ -1,13 +1,15 @@
 import { describe, it, expect } from 'vitest';
 import { execCommand, makeState, type Ctx } from '../src/lib/commands';
 
+// date 是 ISO 字符串：ctx 经 data-ctx JSON 传到客户端，Date 会变 string
+// （Entry.date 曾声明为 Date 导致 ls 在浏览器抛 TypeError —— 空回显）
 const entries: Ctx = {
   posts: [
-    { slug: 'a', title: 'Alpha', date: new Date('2026-01-02') },
-    { slug: 'b', title: 'Beta', date: new Date('2026-01-01') },
+    { slug: 'a', title: 'Alpha', date: '2026-01-02' },
+    { slug: 'b', title: 'Beta', date: '2026-01-01' },
   ],
-  notes: [{ slug: 'n1', title: 'Note', date: new Date('2026-02-01') }],
-  lab: [{ slug: 'l1', title: 'Lab', date: new Date('2026-03-01') }],
+  notes: [{ slug: 'n1', title: 'Note', date: '2026-02-01' }],
+  lab: [{ slug: 'l1', title: 'Lab', date: '2026-03-01' }],
 };
 
 const searchCtx: Ctx = {
@@ -25,11 +27,12 @@ const searchCtx: Ctx = {
 };
 
 describe('execCommand', () => {
-  it('ls 列出各分组文件', () => {
+  it('ls 列出各分组文件（含日期）', () => {
     const out = execCommand('ls', makeState(), entries);
     const text = out.lines.map((l) => l.text).join('\n');
     expect(text).toContain('posts/');
     expect(text).toContain('a.md');
+    expect(text).toContain('2026-01-02');
     expect(text).toContain('n1.md');
     expect(text).toContain('l1.md');
   });

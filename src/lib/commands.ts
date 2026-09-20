@@ -1,7 +1,8 @@
 export interface Entry {
   slug: string;
   title: string;
-  date: Date;
+  /** ISO 日期串（YYYY-MM-DD…）：ctx 经 data-ctx JSON 序列化传给客户端，不能放 Date */
+  date: string;
   anime?: string;
 }
 
@@ -75,7 +76,7 @@ export function execCommand(raw: string, state: State, ctx: Ctx): Result {
           ...list.map(
             (e) =>
               ({
-                text: `  ${e.slug}.md  ${e.date.toISOString().slice(0, 10)}`,
+                text: `  ${e.slug}.md  ${e.date.slice(0, 10)}`,
                 cls: '',
               }) as Line
           ),

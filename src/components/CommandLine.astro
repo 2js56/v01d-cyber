@@ -12,7 +12,8 @@ const { posts, notes, lab } = Astro.props;
 const toEntry = (e: CollectionEntry<'posts' | 'notes' | 'lab'>): Entry => ({
   slug: e.id.replace(/\.md$/, ''),
   title: e.data.title,
-  date: e.data.date,
+  // 序列化前转 ISO 串 —— data-ctx 走 JSON，Date 对象到客户端会变成 string
+  date: e.data.date.toISOString(),
   anime: e.data.anime,
 });
 const ctx: Ctx = {
@@ -122,6 +123,8 @@ const ctx: Ctx = {
   }
 
   input.addEventListener('keydown', (e) => {
+    // 拼音组合中的 Enter 是选字确认，不是执行命令
+    if (e.isComposing) return;
     if (e.key === 'Enter' && input.value.trim()) {
       const v = input.value;
       input.value = '';
