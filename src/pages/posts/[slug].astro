@@ -3,6 +3,7 @@ import type { CollectionEntry } from 'astro:content';
 import TerminalShell from '../../layouts/TerminalShell.astro';
 import AnimeArt from '../../components/AnimeArt.astro';
 import { getCollection, render } from 'astro:content';
+import { withBase } from '../../lib/base';
 import '../../styles/prose.css';
 
 type Entry = CollectionEntry<'posts' | 'notes' | 'lab'>;
@@ -28,7 +29,7 @@ const slug = entry.id.replace(/\.md$/, '');
 <TerminalShell title={`${title} — v01d@cyber`}>
   <article>
     <header class="post-hero">
-      {anime && <div class="banner" style={`background-image:url(/art/${anime}_banner.jpg)`}></div>}
+      {anime && <div class="banner" style={`background-image:url(${withBase(`/art/${anime}_banner.jpg`)})`}></div>}
       <div class="post-head">
         <p class="cmdline"><span class="dollar">$</span> cat ./{entry.collection}/{slug}.md</p>
         <h1>{title}</h1>
@@ -46,7 +47,7 @@ const slug = entry.id.replace(/\.md$/, '');
       </div>
       <aside class="art-side">
         <AnimeArt slug={anime} kind="cover" />
-        <a class="back" href="/">&lt;- cd ~/garden</a>
+        <a class="back" href={withBase('/')}>&lt;- cd ~/garden</a>
       </aside>
     </div>
 

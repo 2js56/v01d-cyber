@@ -1,5 +1,6 @@
 ---
 import type { CollectionEntry } from 'astro:content';
+import { withBase } from '../lib/base';
 
 type Entry = CollectionEntry<'posts' | 'notes' | 'lab'>;
 
@@ -28,7 +29,7 @@ const slugOf = (e: Entry) => e.id.replace(/\.md$/, '');
     <section id={dir} class="group">
       <p class="dirname">{dir}/</p>
       {list.sort(byDate).map((e, i) => (
-        <a class="row" href={`/posts/${slugOf(e)}`}>
+        <a class="row" href={withBase(`/posts/${slugOf(e)}`)}>
           <span class="arrow" aria-hidden="true">&gt;</span>
           <span class="index">[{String(i + 1).padStart(2, '0')}]</span>
           <span class="fname">{slugOf(e)}.md</span>

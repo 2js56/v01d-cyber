@@ -2,6 +2,7 @@
 import '@fontsource/jetbrains-mono/400.css';
 import '@fontsource/jetbrains-mono/700.css';
 import '../styles/global.css';
+import { withBase } from '../lib/base';
 
 interface Props {
   title?: string;
@@ -15,7 +16,7 @@ const { title = 'v01d@cyber', boot = false } = Astro.props;
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="generator" content={Astro.generator} />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/svg+xml" href={withBase('/favicon.svg')} />
     <title>{title}</title>
     <script is:inline>
       // CRT 开关记忆（theme 命令写入）
@@ -29,7 +30,7 @@ const { title = 'v01d@cyber', boot = false } = Astro.props;
     <header class="winbar">
       <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
       <span class="wintitle">v01d@cyber — zsh</span>
-      <a class="homelink" href="/">~/garden</a>
+      <a class="homelink" href={withBase('/')}>~/garden</a>
     </header>
     <main>
       <slot />

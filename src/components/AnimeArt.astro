@@ -1,5 +1,6 @@
 ---
 import { art } from '../lib/art';
+import { withBase } from '../lib/base';
 
 interface Props {
   slug?: string;
@@ -12,7 +13,7 @@ const info = art(slug);
 {
   info ? (
     <figure class="anime-art">
-      <img src={`/art/${kind === 'cover' ? info.cover : info.banner}`} alt={info.title} loading="lazy" />
+      <img src={withBase(`/art/${kind === 'cover' ? info.cover : info.banner}`)} alt={info.title} loading="lazy" />
       <figcaption>visual: {info.title}</figcaption>
     </figure>
   ) : (
