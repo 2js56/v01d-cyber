@@ -18,14 +18,14 @@ const lab = (await getCollection('lab', (c) => !c.draft)).sort(
 ---
 
 <TerminalShell title="v01d@cyber — 数字花园">
-  <BootSequence client:load />
+  <BootSequence />
   <HeroBanner />
   <div class="whoami">
     <p><span class="prompt">$</span> whoami</p>
     <p class="answer">数码花园管理员 / pwn 研究者 / 赛璐璐考古学家。这里种技术笔记、随笔、项目和一切 wired 的念头。</p>
   </div>
   <PostList posts={posts} notes={notes} lab={lab} />
-  <CommandLine client:load posts={posts} notes={notes} lab={lab} />
+  <CommandLine posts={posts} notes={notes} lab={lab} />
 </TerminalShell>
 
 <style>

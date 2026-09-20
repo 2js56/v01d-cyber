@@ -1,0 +1,60 @@
+/* 正文排版：可读性优先，等宽只用于代码 */
+.prose {
+  font-family: var(--serif);
+  font-size: 17px;
+  line-height: 1.9;
+  color: var(--fg);
+  max-width: 68ch;
+}
+.prose p { margin: 1.1em 0; }
+.prose h2, .prose h3 {
+  font-family: var(--mono);
+  color: var(--green);
+  margin: 1.8em 0 0.7em;
+  line-height: 1.4;
+}
+.prose h2 { font-size: 1.25em; border-left: 3px solid var(--green); padding-left: 10px; }
+.prose h2::before { content: '## '; color: var(--dim); }
+.prose h3 { font-size: 1.05em; }
+.prose h3::before { content: '### '; color: var(--dim); }
+.prose a { text-decoration: underline; text-underline-offset: 3px; }
+.prose ul, .prose ol { padding-left: 1.6em; margin: 1em 0; }
+.prose li { margin: 0.35em 0; }
+.prose code {
+  font-family: var(--mono);
+  font-size: 0.86em;
+  color: var(--pink);
+  background: rgba(180, 102, 255, 0.09);
+  padding: 0.1em 0.4em;
+  border-radius: 4px;
+}
+.prose pre {
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--green);
+  background: #060b14;
+  border: 1px solid #1a2030;
+  border-radius: 8px;
+  padding: 14px 16px;
+  overflow-x: auto;
+  position: relative;
+  margin: 1.3em 0;
+}
+.prose pre code {
+  background: none; color: inherit; padding: 0; font-size: inherit;
+}
+.prose pre::after {
+  /* 代码块的微弱扫描线 */
+  content: '';
+  position: absolute; inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(0deg, transparent 0 3px, rgba(0, 20, 10, 0.03) 3px 4px);
+}
+.prose blockquote {
+  border-left: 3px solid var(--purple);
+  padding: 0.2em 1em;
+  color: var(--cyan);
+  margin: 1.2em 0;
+}
+.prose hr { border: none; border-top: 1px dashed var(--dim); margin: 2em 0; }

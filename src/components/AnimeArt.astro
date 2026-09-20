@@ -1,0 +1,48 @@
+---
+import { art } from '../lib/art';
+
+interface Props {
+  slug?: string;
+  kind?: 'cover' | 'banner';
+}
+const { slug, kind = 'cover' } = Astro.props;
+const info = art(slug);
+---
+
+{
+  info ? (
+    <figure class="anime-art">
+      <img src={`/art/${kind === 'cover' ? info.cover : info.banner}`} alt={info.title} loading="lazy" />
+      <figcaption>visual: {info.title}</figcaption>
+    </figure>
+  ) : (
+    <div class="anime-art placeholder" aria-hidden="true">
+      <span>no key visual</span>
+    </div>
+  )
+}
+
+<style>
+  .anime-art { margin: 0; }
+  .anime-art img {
+    display: block; width: 100%;
+    border: 1px solid #1a2030;
+    border-radius: 6px;
+  }
+  .anime-art figcaption {
+    font-size: 10px; color: var(--dim);
+    margin-top: 4px;
+  }
+  .placeholder {
+    height: 140px;
+    border: 1px dashed var(--dim);
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--dim); font-size: 11px;
+    background: repeating-linear-gradient(
+      135deg,
+      transparent 0 12px,
+      rgba(125, 255, 176, 0.03) 12px 24px
+    );
+  }
+</style>

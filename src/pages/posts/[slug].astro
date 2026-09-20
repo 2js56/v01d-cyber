@@ -1,0 +1,103 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import TerminalShell from '../../layouts/TerminalShell.astro';
+import AnimeArt from '../../components/AnimeArt.astro';
+import { getCollection, render } from 'astro:content';
+import '../../styles/prose.css';
+
+type Entry = CollectionEntry<'posts' | 'notes' | 'lab'>;
+
+export async function getStaticPaths() {
+  const all = [
+    ...(await getCollection('posts', (c) => !c.draft)),
+    ...(await getCollection('notes', (c) => !c.draft)),
+    ...(await getCollection('lab', (c) => !c.draft)),
+  ] as Entry[];
+  return all.map((entry) => ({
+    params: { slug: entry.id.replace(/\.md$/, '') },
+    props: { entry },
+  }));
+}
+
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+const { title, date, tags, anime, mood } = entry.data;
+const slug = entry.id.replace(/\.md$/, '');
+---
+
+<TerminalShell title={`${title} — v01d@cyber`}>
+  <article>
+    <header class="post-hero">
+      {anime && <div class="banner" style={`background-image:url(/art/${anime}_banner.jpg)`}></div>}
+      <div class="post-head">
+        <p class="cmdline"><span class="dollar">$</span> cat ./{entry.collection}/{slug}.md</p>
+        <h1>{title}</h1>
+        <p class="meta">
+          <span>{date.toISOString().slice(0, 10)}</span>
+          {tags.map((t) => <span class="tag">#{t}</span>)}
+          {mood && <span class="mood">“{mood}”</span>}
+        </p>
+      </div>
+    </header>
+
+    <div class="post-body">
+      <div class="prose">
+        <Content />
+      </div>
+      <aside class="art-side">
+        <AnimeArt slug={anime} kind="cover" />
+        <a class="back" href="/">&lt;- cd ~/garden</a>
+      </aside>
+    </div>
+
+    <footer class="post-foot">
+      <span>-- EOF --</span>
+    </footer>
+  </article>
+</TerminalShell>
+
+<style>
+  .post-hero { position: relative; }
+  .banner {
+    height: clamp(140px, 24vh, 260px);
+    background: center 30% / cover no-repeat;
+    position: relative;
+  }
+  .banner::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(180deg, rgba(4, 8, 15, 0.15), var(--bg));
+  }
+  .post-head { padding: 14px 7% 0; max-width: 1200px; }
+  .cmdline { color: var(--green); font-size: 12px; }
+  .cmdline .dollar { margin-right: 6px; }
+  .post-head h1 {
+    font-size: clamp(20px, 3vw, 30px);
+    color: var(--fg);
+    margin: 8px 0;
+    text-shadow: 0 0 12px rgba(138, 216, 255, 0.4);
+  }
+  .meta { display: flex; flex-wrap: wrap; gap: 12px; font-size: 12px; color: var(--dim); }
+  .tag { color: var(--cyan); }
+  .mood { color: var(--purple); }
+
+  .post-body {
+    display: grid;
+    grid-template-columns: 1fr 220px;
+    gap: 28px;
+    padding: 20px 7% 30px;
+    max-width: 1200px;
+    align-items: start;
+  }
+  .art-side { position: sticky; top: 64px; display: flex; flex-direction: column; gap: 14px; }
+  .back { font-size: 12px; color: var(--dim); }
+  .back:hover { color: var(--green); }
+
+  .post-foot { padding: 0 7% 40px; max-width: 1200px; color: var(--dim); font-size: 11px; }
+
+  @media (max-width: 900px) {
+    .post-body { grid-template-columns: 1fr; }
+    .art-side { position: static; flex-direction: row; align-items: center; }
+    .art-side :global(figure) { flex: 0 0 140px; }
+  }
+</style>

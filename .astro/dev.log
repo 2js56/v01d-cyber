@@ -3,21 +3,7 @@
 {"message":"connected.","label":"vite","level":"info"}
 {"message":"Syncing content","label":"content","level":"info"}
 {"message":"Synced content","label":"content","level":"info"}
-{"message":"Re-optimizing dependencies because vite config has changed","label":"vite","level":"info"}
-{"message":" astro  v7.3.3 ready in 425 ms\n┃ Local    http://localhost:4321/\n┃ Network  use --host to expose","label":"SKIP_FORMAT","level":"info"}
+{"message":" astro  v7.3.3 ready in 380 ms\n┃ Local    http://localhost:4321/\n┃ Network  use --host to expose","label":"SKIP_FORMAT","level":"info"}
 {"message":"watching for file changes...","label":null,"level":"info"}
-{"message":"[200] / 8ms","label":null,"level":"info"}
-{"message":"[200] / 2ms","label":null,"level":"info"}
-{"message":"[200] / 28ms","label":null,"level":"info"}
-{"message":"[200] / 3ms","label":null,"level":"info"}
-{"message":"[200] / 2ms","label":null,"level":"info"}
-{"message":"[200] / 9ms","label":null,"level":"info"}
-You are attempting to render <CommandLine client:load />, but CommandLine is an Astro component. Astro components do not render in the client and should not have a hydration directive. Please use a framework component for client rendering.
-{"message":"[200] / 15ms","label":null,"level":"info"}
-You are attempting to render <CommandLine client:load />, but CommandLine is an Astro component. Astro components do not render in the client and should not have a hydration directive. Please use a framework component for client rendering.
-{"message":"[200] / 6ms","label":null,"level":"info"}
-You are attempting to render <CommandLine client:load />, but CommandLine is an Astro component. Astro components do not render in the client and should not have a hydration directive. Please use a framework component for client rendering.
-{"message":"[200] / 3ms","label":null,"level":"info"}
-{"message":"[404] /posts/heap-feng-shui 1ms","label":null,"level":"info"}
-{"message":"/src/pages/index.astro?astro&type=style&index=0&lang.css","label":"watch","level":"info"}
-{"message":"/src/pages/index.astro?astro&type=style&index=0&lang.css","label":"watch","level":"info"}
+{"message":"all is not defined\n  Stack trace:\n    at Module.getStaticPaths (/Users/v01d/coding/MyaiProject/blog/src/pages/posts/[slug].astro:18:1)\n    [...] See full stack trace in the browser, or rerun with --verbose.","label":null,"level":"error"}
+{"message":"[200] /posts/heap-feng-shui 61ms","label":null,"level":"info"}
