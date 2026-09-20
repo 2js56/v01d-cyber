@@ -119,6 +119,17 @@ DESCRIPTION
 NOTES
        听不见？先查音量与系统混音器。还是听不见也好——
        说明耳朵在休息，线还连着。`,
+  poweroff: `NAME
+       poweroff — power off the system
+SYNOPSIS
+       poweroff
+DESCRIPTION
+       CRT 断电：屏幕竖直压缩成一条亮线、收缩成一个
+       白点、熄灭。数秒后反向开机。
+       音乐也断。来电之后要自己 mpg123 —— 断电就是
+       断电，没有例外。
+SEE ALSO
+       mpg123(1), exit(1)`,
   mpg123: `NAME
        mpg123 — play audio from ~/audio
 SYNOPSIS

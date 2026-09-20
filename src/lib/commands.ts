@@ -43,7 +43,8 @@ export type Effect =
   | 'bgm-toggle'
   | 'net-on'
   | 'net-off'
-  | 'keysound-toggle';
+  | 'keysound-toggle'
+  | 'poweroff';
 
 export interface Result {
   lines: Line[];
@@ -137,7 +138,7 @@ function runCase(cmd: string, args: string[], state: State, ctx: Ctx, stdin?: st
             cls: 'green',
           },
           { text: '用法: man <cmd> 看手册 · cat <n|文件> · cd <目录> · ↑↓ 历史 · Ctrl+R 搜索', cls: 'dim' },
-          { text: '环境: keysound（打字机音效）', cls: 'dim' },
+          { text: '环境: keysound（打字机音效）· poweroff（CRT 开关机）', cls: 'dim' },
           { text: '管道: ls | grep 免杀 —— 用 | 把命令串起来', cls: 'dim' },
           { text: 'installed: ps netstat ss uptime dmesg history nmap sqlmap ssh hydra', cls: 'cyan' },
           { text: '彩蛋自己找。（提示：上上下下左右左右BA）', cls: 'dim' },
@@ -418,6 +419,14 @@ function runCase(cmd: string, args: string[], state: State, ctx: Ctx, stdin?: st
           { text: '极轻的机械 click，每次击键都有重量。再输一次开关，偏好会记住。', cls: 'dim' },
         ],
         effect: 'keysound-toggle',
+      };
+
+    case 'poweroff':
+      return {
+        lines: [
+          { text: 'Broadcast message from v01d@cyber: The system is going down for reboot NOW!', cls: 'err' },
+        ],
+        effect: 'poweroff',
       };
 
     case 'clear':

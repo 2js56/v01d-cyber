@@ -109,6 +109,35 @@ html.wired .crt::after {
   animation: scanline 6s linear infinite;
 }
 
+/* CRT 开关机（poweroff）：全屏黑 → 竖直压成一条亮线 → 收成一个白点 → 灭。
+   JS 摘类后 poweron 闪两下亮起。reduced-motion 时通配规则压成瞬时 */
+body.poweroff::after {
+  content: '';
+  position: fixed; inset: 0; z-index: 99999; background: #000;
+  transform-origin: 50% 50%;
+  animation: crt-off 1.1s ease-in forwards;
+}
+@keyframes crt-off {
+  0% { transform: scaleY(1); opacity: 0; }
+  12% { transform: scaleY(1); opacity: 1; }
+  60% { transform: scaleY(0.004); opacity: 1; }
+  61% { background: #dff1ff; }
+  85% { transform: scaleY(0.004) scaleX(0.55); background: #ffffff; }
+  100% { transform: scaleY(0.004) scaleX(0); background: #ffffff; }
+}
+body.poweron::after {
+  content: '';
+  position: fixed; inset: 0; z-index: 99999; background: #04080f;
+  pointer-events: none;
+  animation: crt-on 0.65s steps(2, jump-none) forwards;
+}
+@keyframes crt-on {
+  0% { opacity: 1; }
+  50% { opacity: 0.15; }
+  75% { opacity: 0.85; }
+  100% { opacity: 0; }
+}
+
 /* rm -rf 彩蛋：全屏假故障 */
 body.rmrf::after {
   content: '';

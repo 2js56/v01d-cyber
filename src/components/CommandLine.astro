@@ -62,8 +62,10 @@ const ctx: Ctx = {
   import { withBase } from '../lib/base';
   import { navigate } from 'astro:transitions/client';
   import { netSet, applyNet, netOn } from '../lib/net';
-  import { visit, readFinger, webStores } from '../lib/visitor';
+  import { visit, readFinger, webStores, isNight } from '../lib/visitor';
   import { keyClick, keysoundOn, keysoundSetEnabled } from '../lib/keysound';
+  import { bgmPowerCut } from '../lib/bgm';
+  import { whisperFor } from '../lib/whisper';
 
   // 连接态总闸：写偏好 → 重放 <html> → BGM 退远/恢复 → 广播（hero 即时换台）
   const netGo = (on: boolean) => {
@@ -79,6 +81,9 @@ const ctx: Ctx = {
   // 冷加载时脚本先于 astro:page-load 执行，直接调一次（marker 防双绑）
   let konamiAC: AbortController | null = null;
   let printAC: AbortController | null = null;
+  // idle 低语的计时器跨 init 共享（虚拟导航换 body 后旧闭包自然失效）
+  let idleTimer: ReturnType<typeof setTimeout> | undefined;
+  let lastWhisper = 0;
   const init = () => {
     const root = document.getElementById('cli');
     if (!root || root.dataset.ready) return;
@@ -143,6 +148,23 @@ const ctx: Ctx = {
         step();
       });
 
+    // idle 低语：60s 没人动终端自言自语（深夜更想说话），一动就闭嘴；3 分钟冷却
+    const armIdle = () => {
+      clearTimeout(idleTimer);
+      idleTimer = setTimeout(async () => {
+        if (!document.contains(input)) return;
+        const now = Date.now();
+        if (now - lastWhisper >= 180000) {
+          const w = whisperFor(Math.floor(now / 60000), isNight(new Date()));
+          if (w) {
+            lastWhisper = now;
+            await typeLine(w, 'purple');
+          }
+        }
+        armIdle();
+      }, 60000);
+    };
+
     // readline：↑/↓ 遍历历史，Ctrl+R 反向搜索（每按一次跳到更早的一条匹配）
     let histIdx = -1; // -1 = 不在历史遍历中
     let draft = ''; // 遍历前的草稿，↓ 到底恢复
@@ -153,6 +175,9 @@ const ctx: Ctx = {
       if (e.isComposing) return;
       // 打字机音效：普通字符键才响（修饰键/方向键不响）
       if (!e.ctrlKey && !e.metaKey && !e.altKey && e.key.length === 1) keyClick();
+      // 环境感知广播：hero 数据雨听终端的（打字加速下落）
+      if (e.key.length === 1) dispatchEvent(new CustomEvent('term:activity', { detail: { kind: 'type' } }));
+      armIdle();
       const h = state.history;
       if (e.key === 'ArrowUp') {
         e.preventDefault();
@@ -196,6 +221,12 @@ const ctx: Ctx = {
     async function run(raw: string) {
       histIdx = -1;
       draft = '';
+      // 环境感知广播：grep 时雨滴短暂变成关键词字符（满屏都是你找的词）
+      const first = raw.trim().split(/\s+/)[0];
+      if (first === 'grep') {
+        const q = raw.trim().slice(first.length).split('|')[0]!.trim();
+        if (q) dispatchEvent(new CustomEvent('term:activity', { detail: { kind: 'grep', text: q } }));
+      }
       await typeLine(`v01d@cyber:~$ ${raw}`, 'prompt');
       const result = execCommand(raw, state, ctx);
       for (const line of result.lines) {
@@ -228,6 +259,15 @@ const ctx: Ctx = {
       }
       if (result.effect === 'net-on') netGo(true);
       if (result.effect === 'net-off') netGo(false);
+      if (result.effect === 'poweroff') {
+        await bgmPowerCut();
+        document.body.classList.add('poweroff');
+        await new Promise((r) => setTimeout(r, 2100));
+        document.body.classList.remove('poweroff');
+        document.body.classList.add('poweron');
+        setTimeout(() => document.body.classList.remove('poweron'), 700);
+        await typeLine('reboot: CRT ok · wired ok · ghost ok · 你还在，好。', 'green');
+      }
       if (result.effect === 'rmrf') {
         document.body.classList.add('rmrf');
         setTimeout(() => document.body.classList.remove('rmrf'), 1500);

@@ -41,6 +41,15 @@ export function bgmSetDucked(on: boolean) {
   if (audio && bgmPlaying()) fade(audio, on ? DUCK : VOL, 900);
 }
 
+/** 断电（poweroff）：淡出暂停，但不改播放偏好 —— 来电后要自己 mpg123 */
+export async function bgmPowerCut(): Promise<void> {
+  if (audio && bgmPlaying()) {
+    await fade(audio, 0, 400);
+    audio.pause();
+    syncBgmIndicator();
+  }
+}
+
 /** 自动起播偏好：默认开（首次访客也尝试），显式关过才关 */
 export function autostartWanted(pref: string | null): boolean {
   return pref !== 'off';

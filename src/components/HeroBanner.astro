@@ -223,7 +223,8 @@ const nightPool = ['lain', 'paranoia', 'perfect_blue']
     addEventListener('night:change', enter, { signal });
     enter();
 
-    // 数据雨：低密度低透明度，滚出视口即停
+    // 数据雨：低密度低透明度，滚出视口即停。环境感知——终端打字加速下落，
+    // grep 时雨滴短暂变成关键词字符（满屏都是你找的词），30s 无人动则放慢
     const canvas = hero.querySelector('canvas')!;
     const ctx = canvas.getContext('2d')!;
     const resize = () => {
@@ -232,6 +233,24 @@ const nightPool = ['lain', 'paranoia', 'perfect_blue']
     };
     resize();
     addEventListener('resize', resize, { signal });
+
+    let speedMul = 1;
+    let grepChars = '';
+    let lastAct = Date.now();
+    addEventListener(
+      'term:activity',
+      (e) => {
+        const d = (e as CustomEvent<{ kind: string; text?: string }>).detail;
+        lastAct = Date.now();
+        if (d.kind === 'type') speedMul = 2.4;
+        if (d.kind === 'grep' && d.text) {
+          grepChars = d.text;
+          speedMul = 3.2;
+          setTimeout(() => (grepChars = ''), 3000);
+        }
+      },
+      { signal }
+    );
 
     const CHARS = '0101010<>[]{}/\\#$%&*+=~^?!aidlne';
     const drops = Array.from({ length: Math.ceil(canvas.width / 26) }, () => ({
@@ -246,10 +265,12 @@ const nightPool = ['lain', 'paranoia', 'perfect_blue']
       if (!running) return;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.font = '12px monospace';
+      speedMul += (1 - speedMul) * 0.03;
+      const mul = Date.now() - lastAct > 30000 ? 0.45 : speedMul;
       drops.forEach((d, i) => {
         ctx.fillStyle = 'rgba(125,255,176,0.16)';
-        ctx.fillText(d.c, i * 26 + 8, d.y);
-        d.y += d.v;
+        ctx.fillText(grepChars ? grepChars[i % grepChars.length] : d.c, i * 26 + 8, d.y);
+        d.y += d.v * mul;
         if (d.y > canvas.height + 20) d.y = -10;
         if (Math.random() < 0.02) d.c = CHARS[Math.floor(Math.random() * CHARS.length)];
       });
