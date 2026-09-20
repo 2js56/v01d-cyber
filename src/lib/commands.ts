@@ -29,7 +29,7 @@ export interface Line {
   cls?: '' | 'cyan' | 'green' | 'err' | 'dim' | 'purple';
 }
 
-export type Effect = 'clear' | 'wired' | 'rmrf' | 'exit' | 'crt-toggle';
+export type Effect = 'clear' | 'wired' | 'rmrf' | 'exit' | 'crt-toggle' | 'bgm-toggle';
 
 export interface Result {
   lines: Line[];
@@ -111,7 +111,7 @@ function runCase(cmd: string, args: string[], state: State, ctx: Ctx, stdin?: st
       return {
         lines: [
           {
-            text: 'commands: help man ls cat cd grep whoami theme clear lain exit',
+            text: 'commands: help man ls cat cd grep mpg123 whoami theme clear lain exit',
             cls: 'green',
           },
           { text: '用法: man <cmd> 看手册 · cat <n|文件> · cd <目录> · ↑↓ 历史 · Ctrl+R 搜索', cls: 'dim' },
@@ -306,6 +306,15 @@ function runCase(cmd: string, args: string[], state: State, ctx: Ctx, stdin?: st
           },
         ],
         effect: 'wired',
+      };
+
+    case 'mpg123':
+      return {
+        lines: [
+          { text: '[mpg123] ~/audio/duvet.mp3 —— bôa 「Duvet」', cls: 'cyan' },
+          { text: 'low volume · loop · 再输一次停止 · 状态会记住', cls: 'dim' },
+        ],
+        effect: 'bgm-toggle',
       };
 
     case 'sudo':

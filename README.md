@@ -45,7 +45,13 @@ draft: false
 
 `public/art/` 下的 key visual 来自 AniList 收录的官方宣传图，版权归各制作委员会所有。本站为个人非商用博客，页脚已标注来源；如需完全规避风险，可将 `scripts/fetch-art.mjs` 的图源替换为 AI 生成。
 
-## 部署
+## BGM
+
+终端里输 `mpg123` 播放 bôa — Duvet（serial experiments lain OP），低音量循环，再输一次停止；偏好会记住，下次进站在首次交互后续播。窗口栏右侧的 `♪` 也可以点。
+
+音频文件 `public/audio/duvet.mp3` 需自备且默认不入库（`.gitignore` 忽略 `*.mp3`，公开分发版权音频有被 DMCA 的风险）。想上线原曲：删掉 `.gitignore` 里那行、放入文件、commit——风险自担。文件缺失时命令会优雅报错。
+
+
 
 任意静态托管均可：
 

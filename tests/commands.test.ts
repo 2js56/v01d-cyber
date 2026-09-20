@@ -179,6 +179,7 @@ describe('execCommand', () => {
     const text = execCommand('help', makeState(), entries).lines.map((l) => l.text).join('\n');
     expect(text).toContain('ls');
     expect(text).toContain('grep');
+    expect(text).toContain('mpg123');
     expect(text).toContain('nmap');
     expect(text).toContain('sqlmap');
     expect(text).toContain('ps');
@@ -193,6 +194,12 @@ describe('execCommand', () => {
 
   it('exit 触发关窗动画', () => {
     expect(execCommand('exit', makeState(), entries).effect).toBe('exit');
+  });
+
+  it('mpg123 切换 BGM 并显示曲目', () => {
+    const out = execCommand('mpg123', makeState(), entries);
+    expect(out.effect).toBe('bgm-toggle');
+    expect(out.lines.map((l) => l.text).join('\n')).toMatch(/Duvet/);
   });
 });
 

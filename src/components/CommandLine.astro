@@ -58,6 +58,7 @@ const ctx: Ctx = {
 <script>
   import { execCommand, makeState } from '../lib/commands';
   import { tabComplete } from '../lib/complete';
+  import { bgmToggle } from '../lib/bgm';
   import { withBase } from '../lib/base';
 
   const root = document.getElementById('cli');
@@ -156,6 +157,14 @@ const ctx: Ctx = {
       await typeLine(line.text, line.cls ?? '');
     }
     if (result.effect === 'clear') output.replaceChildren();
+    if (result.effect === 'bgm-toggle') {
+      const st = await bgmToggle();
+      if (st === 'missing')
+        await typeLine(
+          '[mpg123] error: 打不开 ~/audio/duvet.mp3 —— 文件不存在（见 README「BGM」一节）',
+          'err'
+        );
+    }
     if (result.effect === 'crt-toggle') {
       const el = document.documentElement;
       const off = el.dataset.crt === 'off';

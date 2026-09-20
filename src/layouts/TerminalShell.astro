@@ -30,6 +30,7 @@ const { title = 'v01d@cyber', boot = false } = Astro.props;
     <header class="winbar">
       <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
       <span class="wintitle">v01d@cyber — zsh</span>
+      <button id="bgm-ind" class="bgm" title="mpg123 — bôa 「Duvet」">♪̸</button>
       <a class="homelink" href={withBase('/')}>~/ghost</a>
     </header>
     <main>
@@ -47,6 +48,16 @@ const { title = 'v01d@cyber', boot = false } = Astro.props;
         tick();
         setInterval(tick, 1000);
       }
+    </script>
+    <script>
+      // BGM：Duvet。指示器可点，上次开着的等首次交互后自动续播
+      import { bgmToggle, bgmResume, syncBgmIndicator } from '../lib/bgm';
+      const ind = document.getElementById('bgm-ind');
+      if (ind) {
+        ind.addEventListener('click', () => bgmToggle());
+        syncBgmIndicator();
+      }
+      bgmResume();
     </script>
   </body>
 </html>

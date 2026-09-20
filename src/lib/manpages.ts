@@ -81,6 +81,19 @@ SEE ALSO
 DESCRIPTION
        v01d is not in the sudoers file. This incident will
        be reported.（骗你的，你是 root 又怎样）`,
+  mpg123: `NAME
+       mpg123 — play audio from ~/audio
+SYNOPSIS
+       mpg123
+DESCRIPTION
+       播放 bôa — Duvet（serial experiments lain, OP），
+       低音量循环。再输一次停止；偏好会记住，下次进站
+       在你第一次交互后自动续播（浏览器不允许静默自动
+       播放，这不是 bug，是礼貌）。
+       文件: public/audio/duvet.mp3（不入库，自备）。
+NOTES
+       无论你在哪个页面，Duvet 都会跟着你。
+       no matter where you go…`,
   history: `NAME
        history — display the command history
 DESCRIPTION
