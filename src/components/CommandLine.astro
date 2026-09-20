@@ -1,0 +1,124 @@
+---
+import type { Ctx, Entry } from '../lib/commands';
+import type { CollectionEntry } from 'astro:content';
+
+interface Props {
+  posts: CollectionEntry<'posts'>[];
+  notes: CollectionEntry<'notes'>[];
+  lab: CollectionEntry<'lab'>[];
+}
+const { posts, notes, lab } = Astro.props;
+
+const toEntry = (e: CollectionEntry<'posts' | 'notes' | 'lab'>): Entry => ({
+  slug: e.id.replace(/\.md$/, ''),
+  title: e.data.title,
+  date: e.data.date,
+  anime: e.data.anime,
+});
+const ctx: Ctx = {
+  posts: posts.map(toEntry),
+  notes: notes.map(toEntry),
+  lab: lab.map(toEntry),
+};
+---
+
+<div id="cli" data-ctx={JSON.stringify(ctx)}>
+  <div id="cli-output" aria-live="polite"></div>
+  <div class="cli-input-row">
+    <label class="prompt" for="cli-input">v01d@cyber:~$</label>
+    <input id="cli-input" autocomplete="off" spellcheck="false" enterkeyhint="go" />
+  </div>
+</div>
+
+<style>
+  #cli {
+    margin: 8px 7% 40px;
+    max-width: 1100px;
+    font-size: 13px;
+  }
+  #cli-output .line { white-space: pre-wrap; line-height: 1.7; }
+  #cli-output .line.cyan { color: var(--cyan); }
+  #cli-output .line.green { color: var(--green); }
+  #cli-output .line.err { color: #ff5f8f; }
+  #cli-output .line.dim { color: var(--dim); }
+  #cli-output .line.purple { color: var(--purple); }
+  .cli-input-row { display: flex; gap: 8px; align-items: center; }
+  .prompt { color: var(--green); white-space: nowrap; }
+  #cli-input {
+    flex: 1;
+    background: transparent; border: none; outline: none;
+    color: var(--fg);
+    font: inherit;
+    caret-color: var(--green);
+  }
+  #cli-input:focus { outline: none; }
+</style>
+
+<script>
+  import { execCommand, makeState } from '../lib/commands';
+
+  const root = document.getElementById('cli');
+  const output = document.getElementById('cli-output')!;
+  const input = document.getElementById('cli-input') as HTMLInputElement;
+  const ctx = JSON.parse(root!.dataset.ctx!);
+  const state = makeState();
+
+  // 打字机回显：每行逐字输出
+  const typeLine = (text: string, cls: string) =>
+    new Promise<void>((resolve) => {
+      const el = document.createElement('div');
+      el.className = `line ${cls}`;
+      output.appendChild(el);
+      let i = 0;
+      const step = () => {
+        el.textContent = text.slice(0, ++i);
+        if (i < text.length) setTimeout(step, 10);
+        else resolve();
+      };
+      step();
+    });
+
+  async function run(raw: string) {
+    await typeLine(`v01d@cyber:~$ ${raw}`, 'prompt');
+    const result = execCommand(raw, state, ctx);
+    for (const line of result.lines) {
+      await typeLine(line.text, line.cls ?? '');
+    }
+    if (result.effect === 'clear') output.replaceChildren();
+    if (result.effect === 'crt-toggle') {
+      const el = document.documentElement;
+      const off = el.dataset.crt === 'off';
+      el.dataset.crt = off ? 'on' : 'off';
+      try { localStorage.setItem('crt', off ? 'on' : 'off'); } catch {}
+    }
+    if (result.effect === 'wired') document.documentElement.classList.toggle('wired');
+    if (result.effect === 'rmrf') {
+      document.body.classList.add('rmrf');
+      setTimeout(() => document.body.classList.remove('rmrf'), 1500);
+      await typeLine('just kidding :)', 'dim');
+    }
+    if (result.effect === 'exit') {
+      const main = document.querySelector('main');
+      if (main) {
+        main.style.transition = 'transform .35s, opacity .35s';
+        main.style.transform = 'scale(.92)';
+        main.style.opacity = '0';
+        await new Promise((r) => setTimeout(r, 450));
+        main.style.transform = '';
+        main.style.opacity = '1';
+        await typeLine('骗你的。哪也去不了。', 'dim');
+      }
+    }
+    if (result.navigate) {
+      setTimeout(() => (location.href = result.navigate!.href), 350);
+    }
+  }
+
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && input.value.trim()) {
+      const v = input.value;
+      input.value = '';
+      run(v);
+    }
+  });
+</script>

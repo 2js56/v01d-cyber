@@ -2,6 +2,7 @@
 import TerminalShell from '../layouts/TerminalShell.astro';
 import HeroBanner from '../components/HeroBanner.astro';
 import PostList from '../components/PostList.astro';
+import CommandLine from '../components/CommandLine.astro';
 import { getCollection } from 'astro:content';
 
 const posts = (await getCollection('posts', (c) => !c.draft)).sort(
@@ -22,7 +23,7 @@ const lab = (await getCollection('lab', (c) => !c.draft)).sort(
     <p class="answer">数码花园管理员 / pwn 研究者 / 赛璐璐考古学家。这里种技术笔记、随笔、项目和一切 wired 的念头。</p>
   </div>
   <PostList posts={posts} notes={notes} lab={lab} />
-  <div id="cli-root"></div>
+  <CommandLine client:load posts={posts} notes={notes} lab={lab} />
 </TerminalShell>
 
 <style>

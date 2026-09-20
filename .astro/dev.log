@@ -12,3 +12,10 @@
 {"message":"[200] / 3ms","label":null,"level":"info"}
 {"message":"[200] / 2ms","label":null,"level":"info"}
 {"message":"[200] / 9ms","label":null,"level":"info"}
+You are attempting to render <CommandLine client:load />, but CommandLine is an Astro component. Astro components do not render in the client and should not have a hydration directive. Please use a framework component for client rendering.
+{"message":"[200] / 15ms","label":null,"level":"info"}
+You are attempting to render <CommandLine client:load />, but CommandLine is an Astro component. Astro components do not render in the client and should not have a hydration directive. Please use a framework component for client rendering.
+{"message":"[200] / 6ms","label":null,"level":"info"}
+You are attempting to render <CommandLine client:load />, but CommandLine is an Astro component. Astro components do not render in the client and should not have a hydration directive. Please use a framework component for client rendering.
+{"message":"[200] / 3ms","label":null,"level":"info"}
+{"message":"[404] /posts/heap-feng-shui 1ms","label":null,"level":"info"}
