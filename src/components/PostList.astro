@@ -1,0 +1,71 @@
+---
+import type { CollectionEntry } from 'astro:content';
+
+type Entry = CollectionEntry<'posts' | 'notes' | 'lab'>;
+
+interface Props {
+  posts: Entry[];
+  notes: Entry[];
+  lab: Entry[];
+}
+const { posts, notes, lab } = Astro.props;
+
+const groups = [
+  { dir: 'posts', list: posts },
+  { dir: 'notes', list: notes },
+  { dir: 'lab', list: lab },
+] as const;
+
+const byDate = (a: Entry, b: Entry) => b.data.date.valueOf() - a.data.date.valueOf();
+const fmt = (d: Date) => d.toISOString().slice(0, 10);
+// content layer glob loader 的 id 含扩展名（如 heap-feng-shui.md），URL 用去扩展名形式
+const slugOf = (e: Entry) => e.id.replace(/\.md$/, '');
+---
+
+<div class="postlist">
+  <p class="cmdline">$ ls ~/garden --group</p>
+  {groups.map(({ dir, list }) => (
+    <section id={dir} class="group">
+      <p class="dirname">{dir}/</p>
+      {list.sort(byDate).map((e, i) => (
+        <a class="row" href={`/posts/${slugOf(e)}`}>
+          <span class="arrow" aria-hidden="true">&gt;</span>
+          <span class="index">[{String(i + 1).padStart(2, '0')}]</span>
+          <span class="fname">{slugOf(e)}.md</span>
+          <span class="tags">{e.data.tags.map((t) => `#${t}`).join(' ')}</span>
+          <span class="meta">
+            <span class="date">{fmt(e.data.date)}</span>
+            {e.data.anime && <span class="anime">⌈{e.data.anime}⌋</span>}
+          </span>
+        </a>
+      ))}
+    </section>
+  ))}
+</div>
+
+<style>
+  .postlist { padding: 18px 7%; max-width: 1100px; }
+  .cmdline { color: var(--green); font-size: 13px; margin-bottom: 10px; }
+  .dirname { color: var(--cyan); font-size: 13px; margin: 16px 0 6px; }
+  .row {
+    display: flex; align-items: baseline; gap: 10px;
+    padding: 4px 8px 4px 0;
+    color: var(--fg); font-size: 13px;
+    border-left: 2px solid transparent;
+  }
+  .row:hover { background: rgba(125, 255, 176, 0.05); text-decoration: none; border-left-color: var(--green); }
+  .arrow { color: var(--green); opacity: 0; width: 12px; transition: opacity 0.12s; }
+  .row:hover .arrow { opacity: 1; }
+  .index { color: var(--dim); }
+  .fname:hover { color: var(--green); }
+  .tags { color: var(--dim); font-size: 11px; }
+  .meta { margin-left: auto; display: flex; gap: 10px; font-size: 11px; }
+  .date { color: var(--dim); }
+  .anime { color: var(--purple); }
+
+  @media (max-width: 768px) {
+    .postlist { padding: 14px 4%; }
+    .tags, .anime { display: none; }
+    .fname { overflow-wrap: anywhere; }
+  }
+</style>
