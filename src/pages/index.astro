@@ -3,6 +3,7 @@ import TerminalShell from '../layouts/TerminalShell.astro';
 import HeroBanner from '../components/HeroBanner.astro';
 import PostList from '../components/PostList.astro';
 import CommandLine from '../components/CommandLine.astro';
+import BootSequence from '../components/BootSequence.astro';
 import { getCollection } from 'astro:content';
 
 const posts = (await getCollection('posts', (c) => !c.draft)).sort(
@@ -17,6 +18,7 @@ const lab = (await getCollection('lab', (c) => !c.draft)).sort(
 ---
 
 <TerminalShell title="v01d@cyber — 数字花园">
+  <BootSequence client:load />
   <HeroBanner />
   <div class="whoami">
     <p><span class="prompt">$</span> whoami</p>

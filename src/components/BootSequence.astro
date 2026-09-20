@@ -1,0 +1,85 @@
+---
+// 首次访问的 BIOS 开机动画：client:load 岛屿，localStorage 记忆，任意键/点击跳过
+---
+
+<div id="boot" hidden>
+  <pre id="boot-log" aria-hidden="true"></pre>
+  <p class="boot-skip">press any key to skip</p>
+</div>
+
+<style>
+  #boot {
+    position: fixed; inset: 0; z-index: 99999;
+    background: #01040a;
+    display: flex; flex-direction: column; justify-content: center;
+    padding: 0 10vw;
+    transition: opacity 0.4s;
+  }
+  #boot[hidden] { display: none; }
+  #boot.done { opacity: 0; pointer-events: none; }
+  #boot-log {
+    font-family: var(--mono);
+    font-size: clamp(10px, 1.6vw, 13px);
+    color: var(--green);
+    line-height: 1.8;
+    white-space: pre-wrap;
+  }
+  .boot-skip {
+    position: absolute; bottom: 24px; right: 28px;
+    color: var(--dim); font-size: 10px;
+    animation: blink 1.4s infinite;
+  }
+  @media (prefers-reduced-motion: reduce) { #boot { display: none !important; } }
+</style>
+
+<script>
+  const LINES = [
+    '[    0.000000] v01d-bios v4.2 — initializing',
+    '[    0.412337] cpu: 1x human heart @ 60bpm … ok',
+    '[    0.566021] mounting /dev/garden … ok',
+    '[    0.771204] loading anime_keyvisual.ko … ok',
+    '[    0.931458] crt.phosphor calibration … ok',
+    '[    1.092451] establishing uplink to WIRED … CONNECTED',
+    '',
+    '  welcome to v01d@cyber — no matter where you go,',
+    '                            everyone is connected.',
+  ];
+
+  const el = document.getElementById('boot')!;
+  const log = document.getElementById('boot-log')!;
+
+  let booted = false;
+  try { booted = localStorage.getItem('booted') === '1'; } catch {}
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const finish = () => {
+    el.classList.add('done');
+    setTimeout(() => el.setAttribute('hidden', ''), 450);
+    try { localStorage.setItem('booted', '1'); } catch {}
+    removeEventListener('keydown', finish);
+    removeEventListener('pointerdown', finish);
+  };
+
+  if (!booted && !reduce) {
+    el.removeAttribute('hidden');
+    addEventListener('keydown', finish, { once: true });
+    addEventListener('pointerdown', finish, { once: true });
+
+    let li = 0;
+    const typeLine = () => {
+      if (li >= LINES.length) {
+        setTimeout(finish, 500);
+        return;
+      }
+      const line = LINES[li++];
+      let ci = 0;
+      const step = () => {
+        log.textContent = log.textContent.slice(0, log.textContent.length) + line.slice(0, ++ci) + (ci < line.length ? '▊' : '\n');
+        if (ci < line.length) setTimeout(step, 8);
+        else setTimeout(typeLine, 60);
+      };
+      step();
+    };
+    setTimeout(typeLine, 150);
+  }
+</script>

@@ -19,3 +19,5 @@ You are attempting to render <CommandLine client:load />, but CommandLine is an 
 You are attempting to render <CommandLine client:load />, but CommandLine is an Astro component. Astro components do not render in the client and should not have a hydration directive. Please use a framework component for client rendering.
 {"message":"[200] / 3ms","label":null,"level":"info"}
 {"message":"[404] /posts/heap-feng-shui 1ms","label":null,"level":"info"}
+{"message":"/src/pages/index.astro?astro&type=style&index=0&lang.css","label":"watch","level":"info"}
+{"message":"/src/pages/index.astro?astro&type=style&index=0&lang.css","label":"watch","level":"info"}
