@@ -107,6 +107,18 @@ SEE ALSO
 DESCRIPTION
        v01d is not in the sudoers file. This incident will
        be reported.（骗你的，你是 root 又怎样）`,
+  keysound: `NAME
+       keysound — typewriter key click
+SYNOPSIS
+       keysound
+DESCRIPTION
+       每次击键一个极轻的机械 click：15ms 白噪声过
+       1.8kHz 高通，音量 0.06。Web Audio 现场合成，
+       没有音频文件，没有网络请求。
+       再输一次开关；偏好会记住。
+NOTES
+       听不见？先查音量与系统混音器。还是听不见也好——
+       说明耳朵在休息，线还连着。`,
   mpg123: `NAME
        mpg123 — play audio from ~/audio
 SYNOPSIS

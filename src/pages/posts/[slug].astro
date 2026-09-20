@@ -30,7 +30,18 @@ const theme = themeColors(anime);
 ---
 
 <TerminalShell title={`${title} — v01d@cyber`}>
+  {theme && (
+    <script is:inline define:vars={{ glow: theme.glow }}>
+      // 换页闪切染色：View Transition 新页快照内侧罩一层作品色辉光
+      document.documentElement.style.setProperty('--vt-tint', glow);
+    </script>
+  )}
+  <div class="transfer" data-path={`/posts/${slug}.md`} aria-hidden="true">
+    <i class="transfer-bar"></i>
+    <span class="transfer-text"></span>
+  </div>
   <article
+    data-post
     style={theme ? `--green:${theme.accent};--cyan:${theme.accent};--accent-glow:${theme.glow}` : undefined}
   >
     <header class="post-hero">
@@ -152,12 +163,62 @@ const theme = themeColors(anime);
     .art-side { position: static; flex-direction: row; align-items: center; }
     .art-side :global(figure) { flex: 0 0 140px; }
   }
+
+  /* 传输进度：阅读 = 下载。顶部细线是 accent 色，右上角一行 mono 小字 */
+  .transfer {
+    position: fixed; top: 0; left: 0; right: 0; height: 2px;
+    z-index: 200; pointer-events: none;
+  }
+  .transfer-bar {
+    display: block; height: 100%; width: 0;
+    background: var(--green, #7dffb0);
+    box-shadow: 0 0 8px var(--accent-glow, transparent);
+    transition: width 0.15s linear;
+  }
+  .transfer-text {
+    position: fixed; top: 6px; right: 10px;
+    font-family: var(--mono); font-size: 9px;
+    color: var(--dim); letter-spacing: 0.5px;
+  }
 </style>
 
 <script>
   import { bindQuitKey } from '../../lib/quit';
+  import { animateScramble } from '../../lib/scramble';
+
+  // 标题解码进场：乱码流逐位落定（reduced-motion 直接显示）
+  const initTitle = () => {
+    const h1 = document.querySelector<HTMLElement>('.post-head h1');
+    if (!h1 || h1.dataset.scrambled) return;
+    h1.dataset.scrambled = '1';
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const text = h1.textContent ?? '';
+    if (text) animateScramble(h1, text, 900);
+  };
+
+  // 传输进度：滚动比 → 下载百分比，到底 transfer complete
+  const initTransfer = () => {
+    const root = document.querySelector<HTMLElement>('.transfer');
+    if (!root || root.dataset.bind) return;
+    root.dataset.bind = '1';
+    const bar = root.querySelector<HTMLElement>('.transfer-bar')!;
+    const text = root.querySelector<HTMLElement>('.transfer-text')!;
+    const path = root.dataset.path ?? '';
+    const upd = () => {
+      const max = document.documentElement.scrollHeight - innerHeight;
+      const p = max <= 0 ? 1 : Math.min(1, scrollY / max);
+      bar.style.width = `${(p * 100).toFixed(1)}%`;
+      text.textContent = p >= 0.99 ? 'transfer complete ✓' : `↓ ${path} ${Math.round(p * 100)}%`;
+    };
+    addEventListener('scroll', upd, { passive: true });
+    upd();
+  };
 
   // bindQuitKey 自身幂等（重绑前撤旧监听），page-load 直接调即可
   document.addEventListener('astro:page-load', bindQuitKey);
+  document.addEventListener('astro:page-load', initTitle);
+  document.addEventListener('astro:page-load', initTransfer);
   bindQuitKey();
+  initTitle();
+  initTransfer();
 </script>

@@ -63,6 +63,7 @@ const ctx: Ctx = {
   import { navigate } from 'astro:transitions/client';
   import { netSet, applyNet, netOn } from '../lib/net';
   import { visit, readFinger, webStores } from '../lib/visitor';
+  import { keyClick, keysoundOn, keysoundSetEnabled } from '../lib/keysound';
 
   // 连接态总闸：写偏好 → 重放 <html> → BGM 退远/恢复 → 广播（hero 即时换台）
   const netGo = (on: boolean) => {
@@ -150,6 +151,8 @@ const ctx: Ctx = {
 
     input.addEventListener('keydown', (e) => {
       if (e.isComposing) return;
+      // 打字机音效：普通字符键才响（修饰键/方向键不响）
+      if (!e.ctrlKey && !e.metaKey && !e.altKey && e.key.length === 1) keyClick();
       const h = state.history;
       if (e.key === 'ArrowUp') {
         e.preventDefault();
@@ -214,6 +217,15 @@ const ctx: Ctx = {
         try { localStorage.setItem('crt', off ? 'on' : 'off'); } catch {}
       }
       if (result.effect === 'wired') netGo(!netOn(webStores().ls));
+      if (result.effect === 'keysound-toggle') {
+        const { ls } = webStores();
+        const next = !keysoundOn(ls);
+        keysoundSetEnabled(next, ls);
+        await typeLine(
+          next ? 'keysound: on —— 听，每次击键都有了重量' : 'keysound: off —— 安静了。键盘还在，只是你不听了',
+          'dim'
+        );
+      }
       if (result.effect === 'net-on') netGo(true);
       if (result.effect === 'net-off') netGo(false);
       if (result.effect === 'rmrf') {

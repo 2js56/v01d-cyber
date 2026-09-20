@@ -9,6 +9,8 @@
   --dim: #3a7a5a;
   --mono: 'JetBrains Mono', ui-monospace, Menlo, monospace;
   --serif: 'LXGW WenKai', 'Songti SC', 'Noto Serif CJK SC', serif;
+  /* 换页闪切染色：文章页设为作品色辉光，其余页透明 */
+  --vt-tint: transparent;
 }
 * { box-sizing: border-box; margin: 0; }
 html { background: var(--bg); color: var(--fg); font-family: var(--mono); }
@@ -140,7 +142,11 @@ body.rmrf::after {
 /* 虚拟导航（View Transitions）：CRT 换台感 —— 旧页过曝收束，新页闪两下亮起。
    prefers-reduced-motion 时上面的通配规则会把动画压成瞬时切换 */
 ::view-transition-old(root) { animation: vt-out 0.16s ease-in both; }
-::view-transition-new(root) { animation: vt-in 0.24s ease-out both; }
+::view-transition-new(root) {
+  animation: vt-in 0.24s ease-out both;
+  /* 新页内侧罩一层作品色（文章页）—— 换台时闪的是那部作品的颜色 */
+  box-shadow: inset 0 0 140px var(--vt-tint);
+}
 @keyframes vt-out { to { opacity: 0; filter: brightness(2.2) blur(2px); } }
 @keyframes vt-in {
   0% { opacity: 0; filter: brightness(2); }

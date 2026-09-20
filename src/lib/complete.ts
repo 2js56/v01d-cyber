@@ -2,7 +2,7 @@ import type { Ctx } from './commands';
 
 const COMMANDS = [
   'help', 'man', 'ls', 'cat', 'cd', 'grep', 'mpg123', 'whoami', 'who', 'theme', 'clear', 'lain',
-  'connect', 'disconnect', 'exit',
+  'connect', 'disconnect', 'exit', 'keysound',
   'sudo', 'rm', 'history', 'uptime', 'ps', 'netstat', 'ss', 'nmap', 'sqlmap', 'ssh', 'hydra',
 ];
 

@@ -95,6 +95,7 @@ const nightPool = ['lain', 'paranoia', 'perfect_blue']
   import { netOn } from '../lib/net';
   import { webStores, visit, greeting, isNight } from '../lib/visitor';
   import { nextEvent } from '../lib/countdown';
+  import { animateScramble } from '../lib/scramble';
 
   // 虚拟导航回首页时 hero 是新元素，page-load 重绑；旧 hero 的定时器/监听一并撤掉
   let heroAC: AbortController | null = null;
@@ -107,13 +108,17 @@ const nightPool = ['lain', 'paranoia', 'perfect_blue']
     heroAC = new AbortController();
     const { signal } = heroAC;
 
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
     // Present Day 时间流：副标题活的（分钟级 + 连接/深夜变体）。
-    // 是内容不是动效，prefers-reduced-motion 也照常走
+    // 是内容不是动效，prefers-reduced-motion 也照常走（只是不做解码动画）
     const sub = hero.querySelector<HTMLElement>('.hero-sub');
     const paintSub = () => {
       if (!sub) return;
       const { ls, ss } = webStores();
-      sub.textContent = greeting(visit(ls, ss, Date.now()), new Date(), netOn(ls));
+      const text = greeting(visit(ls, ss, Date.now()), new Date(), netOn(ls));
+      if (reduce) sub.textContent = text;
+      else animateScramble(sub, text);
     };
     paintSub();
     const subTimer = setInterval(() => {
@@ -127,7 +132,6 @@ const nightPool = ['lain', 'paranoia', 'perfect_blue']
     addEventListener('net:change', paintSub, { signal });
     addEventListener('night:change', paintSub, { signal });
 
-    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (reduce) return;
 
     const parse = (attr?: string): Array<[string, string]> =>

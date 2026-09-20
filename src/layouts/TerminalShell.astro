@@ -72,6 +72,9 @@ const { title = 'v01d@cyber', boot = false } = Astro.props;
         try {
           if (localStorage.getItem('crt') === 'off') document.documentElement.dataset.crt = 'off';
         } catch {}
+        // 换页闪切染色只在文章页生效，离开时清掉（inline style 不会被同步重置）
+        if (!document.querySelector('article[data-post]'))
+          document.documentElement.style.removeProperty('--vt-tint');
         // 连接态同样重放（冷加载已由 head 内联脚本处理，这里管虚拟导航）
         bgmSetDucked(applyNet(document.documentElement, webStores().ls));
         syncNight(false);
