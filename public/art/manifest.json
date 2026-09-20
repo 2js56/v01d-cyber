@@ -1,0 +1,17 @@
+{
+  "lain":        { "title": "serial experiments lain",                    "cover": "lain_cover.jpg",        "banner": "lain_banner.jpg" },
+  "gits":        { "title": "GHOST IN THE SHELL: Koukaku Kidoutai",       "cover": "gits_cover.jpg",        "banner": "gits_banner.jpg" },
+  "gits_sac":    { "title": "Koukaku Kidoutai: STAND ALONE COMPLEX",      "cover": "gits_sac_cover.jpg",    "banner": "gits_sac_banner.jpg" },
+  "bebop":       { "title": "Cowboy Bebop",                                "cover": "bebop_cover.jpg",       "banner": "bebop_banner.jpg" },
+  "akira":       { "title": "AKIRA",                                       "cover": "akira_cover.jpg",       "banner": "akira_banner.jpg" },
+  "evangelion":  { "title": "Shin Seiki Evangelion",                       "cover": "evangelion_cover.jpg",  "banner": "evangelion_banner.jpg" },
+  "patlabor2":   { "title": "Kidou Keisatsu Patlabor 2: the Movie",        "cover": "patlabor2_cover.jpg",   "banner": "patlabor2_banner.jpg" },
+  "perfect_blue":{ "title": "PERFECT BLUE",                                "cover": "perfect_blue_cover.jpg","banner": "perfect_blue_banner.jpg" },
+  "paranoia":    { "title": "Mousou Dairinin",                             "cover": "paranoia_cover.jpg",    "banner": "paranoia_banner.jpg" },
+  "psychopass":  { "title": "PSYCHO-PASS",                                 "cover": "psychopass_cover.jpg",  "banner": "psychopass_banner.jpg" },
+  "promare":     { "title": "Promare",                                     "cover": "promare_cover.jpg",     "banner": "promare_banner.jpg" },
+  "blame":       { "title": "BLAME!",                                      "cover": "blame_cover.jpg",       "banner": "blame_banner.jpg" },
+  "gunnm":       { "title": "GUNNM",                                       "cover": "gunnm_cover.jpg",       "banner": "gunnm_banner.jpg" },
+  "city_hunter": { "title": "City Hunter",                                 "cover": "city_hunter_cover.jpg", "banner": "city_hunter_banner.jpg" },
+  "ginga999":    { "title": "Ginga Tetsudou 999",                          "cover": "ginga999_cover.jpg",    "banner": "ginga999_banner.jpg" }
+}
