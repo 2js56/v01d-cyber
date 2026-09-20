@@ -33,9 +33,9 @@ draft: false
 
 ## 可用的 anime slug（官方视觉池）
 
-`lain` `gits` `gits_sac` `bebop` `akira` `evangelion` `patlabor2` `perfect_blue` `paranoia` `psychopass` `promare` `blame` `gunnm` `city_hunter` `ginga999`
+`lain` `gits` `gits_sac` `bebop` `akira` `evangelion`（TV）`eva_eoe`（旧剧场版）`eva_10` `eva_20` `eva_30` `eva_310`（新剧场版 序/破/Q/终）`patlabor2` `perfect_blue` `paranoia` `psychopass` `promare` `blame` `gunnm` `city_hunter` `ginga999`
 
-扩充池子：在 `public/art/manifest.json` 加一行（键名 = AniList 搜索词），删掉本地缓存文件后跑 `npm run fetch-art` 会自动补拉。
+扩充池子：在 `public/art/manifest.json` 加一行（键名即 slug；AniList 搜索词与键名对不上时加 `search` 字段指定，如 `"search": "Evangelion 3.0 You Can"`），删掉本地缓存文件后跑 `npm run fetch-art` 会自动补拉。想用自己的图：按 `${slug}_cover.jpg` / `${slug}_banner.jpg` 命名放进 `public/art/` 即可——文件齐了管线就不会去拉。
 
 ## 终端命令
 

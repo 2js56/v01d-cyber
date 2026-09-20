@@ -13,9 +13,10 @@ const gql = (query) =>
     body: JSON.stringify({ query }),
   }).then((r) => r.json());
 
-async function fetchOne(slug, kind) {
-  // kind: cover | banner；slug 即 AniList 搜索词（manifest 键已按作品英文名/罗马音命名）
-  const q = `query { Media(search:"${slug}", type:ANIME, sort:SEARCH_MATCH) { coverImage{extraLarge} bannerImage } }`;
+async function fetchOne(slug, kind, term) {
+  // kind: cover | banner；搜索词默认取 slug，slug 与作品名对不上时 manifest 用 search 字段覆盖
+  // （如 eva_30 必须搜 "Evangelion 3.0 You Can"，直接搜 "3.0" 会撞到终章）
+  const q = `query { Media(search:${JSON.stringify(term)}, type:ANIME, sort:SEARCH_MATCH) { coverImage{extraLarge} bannerImage } }`;
   const res = await gql(q);
   const m = res?.data?.Media;
   if (!m) return console.warn(`⚠ ${slug}: not found on AniList`);
@@ -34,8 +35,9 @@ async function fetchOne(slug, kind) {
 
 const missing = [];
 for (const [slug, info] of Object.entries(manifest)) {
+  const term = info.search ?? slug;
   for (const kind of ['cover', 'banner']) {
-    if (!existsSync(`${ART}/${info[kind]}`)) missing.push([slug, kind]);
+    if (!existsSync(`${ART}/${info[kind]}`)) missing.push([slug, kind, term]);
   }
 }
 
@@ -45,5 +47,5 @@ if (!missing.length) {
 }
 
 console.log(`fetching ${missing.length} images...`);
-for (const [slug, kind] of missing) await fetchOne(slug, kind);
+for (const [slug, kind, term] of missing) await fetchOne(slug, kind, term);
 console.warn('note: 新拉取的图请核对 manifest title 是否匹配预期作品');

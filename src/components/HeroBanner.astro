@@ -2,7 +2,8 @@
 import { art } from '../lib/art';
 import { withBase } from '../lib/base';
 
-const slugs = ['lain', 'gits', 'bebop', 'psychopass', 'akira'];
+// 轮换池：lain / EVA 系列为主力（TV / EOE / 终章），其余经典轮换
+const slugs = ['lain', 'evangelion', 'eva_eoe', 'eva_310', 'gits', 'bebop', 'psychopass', 'akira'];
 const pick = slugs[Math.floor(Math.random() * slugs.length)];
 const info = art(pick);
 const banner = info ? withBase(`/art/${info.banner}`) : '';
