@@ -31,7 +31,20 @@ const ensure = () => {
 export const bgmPlaying = () => !!audio && !audio.paused && !audio.error;
 
 /** 淡入淡出切换；返回切换后状态，文件缺失/被拦截返回 'missing' */
+let toggling = false;
 export async function bgmToggle(): Promise<'on' | 'off' | 'missing'> {
+  // 防重入：bgmResume 的 kick（pointerdown）可能和指示器 click 在同一次
+  // 点击里先后触发——第二次会误判"正在播放"而立刻停止
+  if (toggling) return bgmPlaying() ? 'on' : 'off';
+  toggling = true;
+  try {
+    return await toggleInner();
+  } finally {
+    toggling = false;
+  }
+}
+
+async function toggleInner(): Promise<'on' | 'off' | 'missing'> {
   const a = ensure();
   if (bgmPlaying()) {
     await fade(a, 0, 500);
@@ -82,7 +95,7 @@ export function bgmResume() {
   addEventListener('keydown', kick);
 }
 
-/** 窗口栏指示器：♪ 播放中 / ♪̸ 静默 */
+/** 窗口栏指示器：♪ 常显，播放时亮绿呼吸，静默时暗淡 */
 export function syncBgmIndicator() {
   const el = document.getElementById('bgm-ind');
   if (!el) return;
@@ -92,7 +105,8 @@ export function syncBgmIndicator() {
       on = localStorage.getItem('bgm') === 'on';
     } catch {}
   }
-  el.textContent = on ? '♪' : '♪̸';
+  // 不用 ♪̸（组合斜线）——多数字体渲染模糊；统一 ♪，靠亮度/动画区分
+  el.textContent = '♪';
   el.classList.toggle('on', on);
 }
 
